@@ -1,8 +1,9 @@
 import { DOMAINS, canonicalFacets, FACET_INTERPRETATIONS, DomainKey } from "./constants";
 import { getFacetScoreLevel, stableStringify } from "./format";
+import { buildDeterministicWhoView, DeterministicWhoView } from "./who_bank_renderer";
 import { sha256 } from "@/lib/crypto/sha256";
 
-export type CardChoice = 'Overwrite' | 'Compatibility' | 'Versus';
+export type CardChoice = 'Compatibility' | 'Versus';
 export type FacetState = 'High' | 'Medium' | 'Low';
 
 export type WhoDerived = {
@@ -29,10 +30,12 @@ export type WhoExport = {
   narrative: string[];              // 6-10 sentences
   lists?: { strengths: string[]; risks: string[]; mediums: string[] };
   listSentences?: { strengths: string[]; risks: string[]; mediums: string[] };
+  deterministic?: DeterministicWhoView;
+  upsellRec?: { id: 'override'|'compare'|'versus'; title: string; why: string; whyDetailed: string; rejects: string[] };
   audit: WhoAudit;
 };
 
-export const WHO_ENGINE_VERSION = "who-engine-0.1.0" as const;
+export const WHO_ENGINE_VERSION = "who-engine-0.2.0" as const;
 export const WHO_RULE_VERSION  = "who-rule-0.1.0"  as const;
 
 const DOMAIN_TIE_ORDER: DomainKey[] = ['O', 'C', 'E', 'A', 'N']; // S ~ N (Stability = 6 - N)
@@ -117,26 +120,7 @@ function pickCard(
   derived: WhoDerived,
   states: Record<DomainKey, Record<string, FacetState>>
 ): { card: CardChoice; reasons: string[] } {
-  const reasons: string[] = [];
-
-  const lowsEffective = countEffectiveLows(states);
-  const stabilityAsS   = 6 - derived.domainMeans.N; // convert N→Stability
-  const lowestAdjusted = Math.min(
-    derived.domainMeans.O, derived.domainMeans.C, derived.domainMeans.E, derived.domainMeans.A, stabilityAsS
-  );
-
-  // Rule 1 — Overwrite
-  if (lowsEffective >= 8) {
-    return { card: 'Overwrite', reasons: ['LOW_COUNT_GE_8_EFFECTIVE'] };
-  }
-  if (derived.stabilityFlag && lowsEffective >= 4) {
-    return { card: 'Overwrite', reasons: ['STABILITY_FLAG_AND_LOW_COUNT_GE_4_EFFECTIVE'] };
-  }
-  if (derived.polarity >= 1.2 && lowestAdjusted < 2.5) {
-    return { card: 'Overwrite', reasons: ['POLARITY_GE_1_2_AND_LOWEST_ADJUSTED_LT_2_5'] };
-  }
-
-  // Rule 2 — Compatibility
+  // Compatibility when interpersonal signals drive outcomes or social style is a key axis
   const Ehigh = derived.domainMeans.E >= 4.0;
   const Elow  = derived.domainMeans.E <= 2.0;
   const Ahigh = derived.domainMeans.A >= 4.0;
@@ -149,8 +133,7 @@ function pickCard(
     for (const f of canonicalFacets('A')) if (states.A[f] === 'High') socialHighs++;
     if (socialHighs >= 4) return { card: 'Compatibility', reasons: ['LOW_POLARITY_WITH_SOCIAL_HIGHS'] };
   }
-
-  // Rule 3 — Versus
+  // Otherwise Versus (clarify tensions and gaps)
   return { card: 'Versus', reasons: ['DEFAULT_VERSUS'] };
 }
 
@@ -342,7 +325,7 @@ export async function buildWhoFromFullResults(
 
   const derived: WhoDerived = { polarity, stabilityMean, stabilityFlag, lowestDomainMean, lowsCount, domainMeans };
   const chosen   = pickCard(derived, states);
-  const narrative= buildNarrative(states, rawByDomain);
+  const narrative = buildNarrative(states, rawByDomain);
 
   // Build lists for UI rendering (headline + bullet list)
   const rankedAll = rankAllFacets(rawByDomain);
@@ -424,6 +407,125 @@ export async function buildWhoFromFullResults(
     .filter(r => states[r.domain][r.facet] === 'Medium')
     .map(r => facetToSentence(r.domain, r.facet, 'Medium'));
 
+  // Build deterministic view using pre-checksum (same fields as final checksum payload)
+  const preChecksum = await sha256(stableStringify({
+    version: WHO_ENGINE_VERSION,
+    runId:   suiteHash || null,
+    states,
+    raw:     rawByDomain,
+    derived,
+    chosen,
+    narrative,
+    ruleVersion: WHO_RULE_VERSION
+  }));
+
+  const deterministic = buildDeterministicWhoView(fullResults, preChecksum);
+
+  // Build Phase-1/Phase-2 lever maps for recommendation logic
+  type Phase1Mini = { plus: string[]; minus: string[]; resolver: string[] };
+  const p1: Phase1Mini = { plus: [], minus: [], resolver: [] };
+  const p2: Record<string, number> = {};
+  const leverMap: Record<DomainKey, Record<string,string>> = {
+    O: { 'Imagination':'imagination','Artistic Interests':'artistic_interests','Emotionality':'emotionality','Adventurousness':'adventurousness','Intellect':'intellect','Liberalism':'liberalism' },
+    C: { 'Self-Efficacy':'self_efficacy','Orderliness':'orderliness','Dutifulness':'dutifulness','Achievement-Striving':'achievement_striving','Self-Discipline':'self_discipline','Cautiousness':'cautiousness' },
+    E: { 'Friendliness':'friendliness','Gregariousness':'gregariousness','Assertiveness':'assertiveness','Activity Level':'activity_level','Excitement-Seeking':'excitement_seeking','Cheerfulness':'cheerfulness' },
+    A: { 'Trust':'trust','Morality':'morality','Altruism':'altruism','Cooperation':'cooperation','Modesty':'modesty','Sympathy':'sympathy' },
+    N: { 'Anxiety':'anxiety','Anger':'anger','Depression':'depression','Self-Consciousness':'self_consciousness','Immoderation':'immoderation','Vulnerability':'vulnerability' }
+  };
+  const domOf: Record<string,'O'|'C'|'E'|'A'|'S'> = {};
+  for (const d of ['O','C','E','A','N'] as DomainKey[]) {
+    const entry = fullResults.find(x=>x.domain===d);
+    const aRaw = entry?.payload?.phase2?.A_raw as Record<string,number> | undefined;
+    if (aRaw) {
+      for (const f of canonicalFacets(d)) {
+        const lever = (leverMap as any)[d][f];
+        if (lever) p2[lever] = aRaw[f] ?? 3.0;
+        if (lever) domOf[lever] = (d==='N'?'S':d) as any;
+      }
+    }
+    const ph1 = entry?.payload?.phase1 as any;
+    if (ph1) {
+      for (const f of canonicalFacets(d)) {
+        const lever = (leverMap as any)[d][f];
+        if (!lever) continue;
+        if ((ph1.p?.[f]||0)===1 && (ph1.m?.[f]||0)===0) p1.plus.push(lever);
+        if ((ph1.t?.[f]||0)===1) p1.resolver.push(lever);
+        if ((ph1.m?.[f]||0)===1) p1.minus.push(lever);
+      }
+    }
+  }
+
+  const H = 3.5, L = 2.5;
+  const b = (x:number) => x>=H?'H':x<=L?'L':'M';
+  function domainMeansForTouched(){
+    const touched = new Set([...p1.plus, ...p1.resolver, ...p1.minus].map(k=> domOf[k]));
+    const means: Record<string, number> = {};
+    for (const d of Array.from(touched)){
+      const ks = [...p1.plus, ...p1.resolver, ...p1.minus].filter(k=> domOf[k]===d && typeof p2[k]==='number');
+      const vals = ks.map(k=> p2[k]);
+      means[d!] = vals.length ? vals.reduce((a,c)=>a+c,0)/vals.length : NaN;
+    }
+    return means;
+  }
+  const meansTouched = domainMeansForTouched();
+  const ds = Object.values(meansTouched).filter(v=>!Number.isNaN(v));
+  const spread = ds.length ? Math.max(...ds) - Math.min(...ds) : 0;
+  const Amean = meansTouched['A'] ?? 3;
+  const Emean = meansTouched['E'] ?? 3;
+  const Smean = meansTouched['S'] ?? 3;
+
+  const lows = [...p1.plus, ...p1.resolver, ...p1.minus].filter(k => b(p2[k] ?? 3) === 'L');
+  const lowLoad = lows.length;
+  const csWeakKeys = new Set([
+    'self_discipline','achievement_striving','orderliness',
+    'anxiety','anger','depression','self_consciousness','immoderation','vulnerability'
+  ]);
+  const hasCSWeak = [...p1.plus, ...p1.resolver, ...p1.minus].some(k => csWeakKeys.has(k) && b(p2[k] ?? 3) === 'L');
+  const assertivenessHigh = b(p2['assertiveness'] ?? 3) === 'H';
+  const sympathyLow = b(p2['sympathy'] ?? 3) === 'L';
+  const liberalismHigh = b(p2['liberalism'] ?? 3) === 'H';
+  const cautiousLow = b(p2['cautiousness'] ?? 3) === 'L';
+  const dutyLow = b(p2['dutifulness'] ?? 3) === 'L';
+  let friction = 0;
+  if (assertivenessHigh && sympathyLow) friction++;
+  if (liberalismHigh && (cautiousLow || dutyLow)) friction++;
+  if (Amean <= 2.80) friction++;
+  if (Emean >= 3.60 && Smean <= 2.80) friction++;
+
+  let upsellRec: { id: 'override'|'compare'|'versus'; title: string; why: string; whyDetailed: string; rejects: string[] };
+  if (lowLoad >= 2 || hasCSWeak){
+    const lowList = lows.slice(0,6).map(k=> `${k}`).join(', ');
+    const csFlags: string[] = [];
+    if (b(p2['self_discipline'] ?? 3)==='L') csFlags.push('self-discipline');
+    if (b(p2['achievement_striving'] ?? 3)==='L') csFlags.push('achievement');
+    if (b(p2['orderliness'] ?? 3)==='L') csFlags.push('orderliness');
+    if (b(p2['anxiety'] ?? 3)==='H') csFlags.push('anxiety');
+    if (b(p2['anger'] ?? 3)==='H') csFlags.push('anger');
+    if (b(p2['depression'] ?? 3)==='H') csFlags.push('depression');
+    const whyDetailed = `You need Override now. You carry ${lowLoad} weak levers: ${lowList}. Your control stack shows strain in ${csFlags.join(', ')||'control levers'}. This mix slows finishes and recovery. Convert these levers into small repeatable actions and quick resets until they hold under load. Do this before you compare with anyone.`;
+    upsellRec = { id:'override', title:'Override Premium — $7', why:'You carry real load in control levers. Direct fixes beat comparison.', whyDetailed, rejects:[
+      'Not needed now: Compatibility. Fix your weak levers first.',
+      'Not needed now: You vs Them. Your gaps need action, not contrast.'
+    ]};
+  } else if (friction >= 2 || spread >= 1.10){
+    const reasons: string[] = [];
+    if (assertivenessHigh && sympathyLow) reasons.push('assertiveness × sympathy');
+    if (liberalismHigh && (cautiousLow || dutyLow)) reasons.push('liberalism × cautiousness/dutifulness');
+    if (Amean <= 2.80) reasons.push('low agreeableness');
+    if (Emean >= 3.60 && Smean <= 2.80) reasons.push('high extraversion with low stability');
+    const whyDetailed = `You need Compatibility now. Your shape predicts friction in pairs: ${reasons.join(', ')||'interpersonal signals'}. Expect heat on handoffs and shared decisions. Map fit, mixed, or tense and get three moves to test. This is about operating with people you actually work or live with.`;
+    upsellRec = { id:'compare', title:'Compatibility — 3 cards for $1.50', why:'Your shape predicts friction in pairs. See fit, mixed, or tense and act on it.', whyDetailed, rejects:[
+      'Not needed now: You vs Them. A quick bar match hides the friction you need to see.',
+      'Not needed now: Override Premium. Your profile is capable; the issue is interaction.'
+    ]};
+  } else {
+    const whyDetailed = 'You need You vs Them now. Your profile is coherent. No heavy weak-lever load. No strong friction markers. Get a clean side-by-side to choose partners, roles, or lanes fast. Use it to confirm biggest gap and strongest sync at a glance.';
+    upsellRec = { id:'versus', title:'You vs Them — 3 cards for $1.50', why:'Your profile is coherent. A clean side-by-side will serve you best.', whyDetailed, rejects:[
+      'Not needed now: Compatibility. No strong tension markers.',
+      'Not needed now: Override Premium. No heavy weak-lever load.'
+    ]};
+  }
+
   const base: WhoExport = {
     version: WHO_ENGINE_VERSION,
     runId: suiteHash || null,
@@ -434,6 +536,8 @@ export async function buildWhoFromFullResults(
     narrative,
     lists: { strengths: listStrengths, risks: listRisks, mediums: listMediums },
     listSentences: { strengths: sentenceStrengths, risks: sentenceRisks, mediums: sentenceMediums },
+    deterministic,
+    upsellRec,
     audit: { checksum: '', ruleVersion: WHO_RULE_VERSION }
   };
 

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import FullResults, { ResultsPanel } from "@/components/assessment/FullResults";
+import PsychProfileAI from "@/components/assessment/PsychProfileAI";
 import { sha256 } from "@/lib/crypto/sha256";
 import { stableStringify } from "@/lib/bigfive/format";
 import { DOMAINS } from "@/lib/bigfive/constants";
@@ -99,6 +100,9 @@ export default function ResultsPage(){
           </div>
         </div>
       )}
+      {mode==='full' ? (
+        <PsychProfileAI />
+      ) : null}
     </main>
   );
 }

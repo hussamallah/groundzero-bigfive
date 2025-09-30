@@ -32,6 +32,18 @@ export default function FullResults({ data, suiteHash, verifyStatus, onVerify }:
       <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
         <small className="muted">Suite hash (SHA-256): <span className="kbd">{suiteHash || '...'}</span></small>
         <div className="row-nowrap" style={{gap:8}}>
+          <button className="btn" onClick={()=>{
+            try{
+              const normalized = data.map((r:any)=>({domain:r.domain, payload:r.payload}));
+              const payload = { suiteHash, results: normalized };
+              const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url; a.download = 'gz-full-results.json';
+              document.body.appendChild(a); a.click();
+              setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 0);
+            } catch {}
+          }}>Download JSON</button>
           <button className="btn" onClick={onVerify}>Verify hash</button>
           {verifyStatus==='ok' ? <span className="badge high">Verified</span> : null}
           {verifyStatus==='fail' ? <span className="badge low">Mismatch</span> : null}
