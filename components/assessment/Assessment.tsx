@@ -43,7 +43,7 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
 
   // Auto-expand top 2 facets when results are available
   useEffect(() => {
-    if (A_raw && Object.keys(open).length === 0) {
+    if (A_raw && priorP && Object.keys(open).length === 0) {
       const order = facets.slice().sort((a,b)=>{
         const rank = { High: 3, Medium: 2, Low: 1 } as const;
         const bucket = Object.fromEntries(facets.map(f=> [f, baseBucket((A_raw as any)[f], (priorP as any)[f])])) as Record<string,'High'|'Medium'|'Low'>;
@@ -307,16 +307,16 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
   }
   
   function buildSummary(): JSX.Element {
-    const domainName = DOMAINS[domain].label.split(' (')[0];
+    const domainName = DOMAINS[domain!].label.split(' (')[0];
     const lvlKey = (getScoreLevel as any)(domain_mean_raw).replace('neutral','medium') as 'high'|'medium'|'low';
     const levelMeaning: Record<'high'|'medium'|'low', string> = {
       high: 'You can access this trait easily and consistently.',
       medium: 'You can turn this trait on when needed, but it is not your default.',
       low: 'This trait stays in the background unless the situation forces it.'
     };
-    const highs = facets.filter(f => (bucket as any)[f] === 'High').sort((a,b)=> (A_raw[b]-A_raw[a])).slice(0,2);
-    const mids = facets.filter(f => (bucket as any)[f] === 'Medium').sort((a,b)=> (Math.abs(3 - A_raw[a]) - Math.abs(3 - A_raw[b]))).slice(0,2);
-    const lows = facets.filter(f => (bucket as any)[f] === 'Low').sort((a,b)=> (A_raw[a]-A_raw[b])).slice(0,2);
+    const highs = facets.filter(f => (bucket as any)[f] === 'High').sort((a,b)=> (A_raw![b]-A_raw![a])).slice(0,2);
+    const mids = facets.filter(f => (bucket as any)[f] === 'Medium').sort((a,b)=> (Math.abs(3 - A_raw![a]) - Math.abs(3 - A_raw![b]))).slice(0,2);
+    const lows = facets.filter(f => (bucket as any)[f] === 'Low').sort((a,b)=> (A_raw![a]-A_raw![b])).slice(0,2);
     return (
       <div>
         <h3>{domainName} — Summary</h3>
@@ -327,7 +327,7 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
             <div style={{fontWeight:600}}>Strong behavior levers</div>
             <ul style={{margin:'4px 0 0', paddingLeft:18}}>
               {highs.map(name => (
-                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain][name].high)}</li>
+                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain!][name].high)}</li>
               ))}
             </ul>
           </div>
@@ -337,7 +337,7 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
             <div style={{fontWeight:600}}>Workable levers</div>
             <ul style={{margin:'4px 0 0', paddingLeft:18}}>
               {mids.map(name => (
-                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain][name].medium)}</li>
+                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain!][name].medium)}</li>
               ))}
             </ul>
           </div>
@@ -347,7 +347,7 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
             <div style={{fontWeight:600}}>Development levers</div>
             <ul style={{margin:'4px 0 0', paddingLeft:18}}>
               {lows.map(name => (
-                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain][name].low)}</li>
+                <li key={name}><b>{name}</b>: {firstSentence((FACET_INTERPRETATIONS as any)[domain!][name].low)}</li>
               ))}
             </ul>
           </div>
