@@ -1,0 +1,34 @@
+{
+  "O": {
+    "Imagination": {
+      "high": "You have an exceptionally rich inner world where fantasy and creativity flourish. You frequently use imaginative thinking to solve problems, entertain yourself, and enhance your daily experiences. Your mind naturally creates vivid mental scenarios and you find great pleasure in exploring imaginary worlds and possibilities.",
+      "medium": "You balance imaginative thinking with practical concerns. While you can appreciate fantasy and creativity, you also value staying grounded in reality. You use imagination when it's helpful but don't rely on it as your primary way of thinking about the world.",
+      "low": "You strongly prefer to focus on facts, reality, and concrete information. Fantasy and imaginative thinking feel unnecessary or even distracting to you. You value practical, straightforward approaches and find that staying grounded in reality serves you well in most situations."
+    },
+    "Artistic Interests": {
+      "high": "You have a deep and passionate appreciation for beauty in all its forms. You actively seek out artistic experiences, whether through visiting museums, attending concerts, or simply noticing the aesthetic qualities in everyday life. You find great meaning and emotional resonance in art, music, literature, and natural beauty, and these experiences often move you deeply.",
+      "medium": "You can appreciate beauty and artistic expression when you encounter it, but you don't actively seek out these experiences. You enjoy some forms of art or music but aren't particularly driven to explore new artistic territories. You value aesthetics but it's not a central focus in your life.",
+      "low": "You have limited interest in artistic or aesthetic pursuits. You may find some forms of art pleasant but don't feel particularly moved by them. You prefer practical, functional things over purely aesthetic considerations and don't spend much time seeking out artistic experiences."
+    },
+    "Emotionality": {
+      "high": "You have exceptional emotional awareness and sensitivity. You are deeply in touch with your feelings and those of others, and you use your emotional intelligence as a primary guide in decision-making. You experience emotions intensely and find that your feelings provide valuable insights into situations and relationships. You may be moved to tears by beautiful music or feel deeply affected by others' emotional states.",
+      "medium": "You have a good balance between emotional awareness and rational thinking. You can tune into your feelings when needed but also rely on logical analysis. You experience emotions normally but don't let them completely override your judgment. You value both emotional and factual information in making decisions.",
+      "low": "You tend to focus more on facts, logic, and practical considerations rather than emotional information. You may not be as aware of your own emotions or those of others, and you prefer to make decisions based on objective data rather than feelings. You value emotional stability and may find intense emotional displays uncomfortable or unnecessary."
+    },
+    "Adventurousness": {
+      "high": "You are a true adventurer who actively seeks out new experiences, places, and challenges. You thrive on variety and change, often feeling restless when stuck in routines. You love trying new foods, visiting new places, meeting new people, and exploring different ways of doing things. The unknown excites rather than frightens you, and you often find yourself planning your next adventure or experience.",
+      "medium": "You enjoy some new experiences but also value the comfort and predictability of familiar routines. You're willing to try new things when the opportunity arises, but you don't actively seek out constant change. You appreciate both stability and variety in your life, finding a balance that works for you.",
+      "low": "You strongly prefer familiar routines and established ways of doing things. Change makes you uncomfortable, and you find great comfort in predictability and stability. You prefer to stick with what you know works, and you may find new experiences stressful or unnecessary rather than exciting."
+    },
+    "Intellect": {
+      "high": "You have a deep love for intellectual pursuits and abstract thinking. You enjoy grappling with complex ideas, engaging in philosophical discussions, and exploring theoretical concepts. You find satisfaction in solving puzzles, debating intellectual issues, and learning about abstract topics. You may spend time reading about science, philosophy, or other academic subjects, and you appreciate the mental stimulation that comes from challenging intellectual work.",
+      "medium": "You can appreciate intellectual pursuits and enjoy some abstract thinking, but you also value practical, hands-on activities. You engage with complex ideas when they're relevant to your life or work, but you don't seek out purely theoretical discussions. You balance intellectual curiosity with practical concerns.",
+      "low": "You prefer dealing with concrete, practical matters rather than abstract ideas or theoretical concepts. You value hands-on experience and practical knowledge over intellectual discussions. You may find purely academic or theoretical topics uninteresting or irrelevant to your daily life, preferring to focus on people, things, and practical applications."
+    },
+    "Liberalism": {
+      "high": "You are naturally inclined to question traditional values, challenge established practices, and think critically about authority and convention. You enjoy exploring alternative viewpoints and are comfortable with ambiguity and change. You may be drawn to progressive causes, unconventional lifestyles, or innovative approaches to problems. You value individual freedom and self-expression over strict adherence to traditional norms.",
+      "medium": "You balance respect for tradition with openness to new ideas and change. You can appreciate both established ways of doing things and innovative approaches. You're willing to consider alternative viewpoints but also value the wisdom that comes from tradition. You make decisions based on what seems most reasonable rather than strictly following or rejecting convention.",
+      "low": "You strongly prefer established traditions and are resistant to challenging authority or conventional practices. You find comfort and security in familiar ways of doing things and may be suspicious of radical change or unconventional ideas. You value stability, tradition, and respect for authority, believing that established practices exist for good reasons."
+    }
+  }
+}
