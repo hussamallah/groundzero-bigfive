@@ -39,6 +39,24 @@ export async function writePsychProfile(callLLM: (args: {
     throw new Error("AI did not return valid JSON");
   }
   
+  // Normalize borderline outputs
+  if (json && json.sections) {
+    const s = json.sections;
+    const ensureLine = (t: any) => typeof t === 'string' ? t.replace(/\n+/g, ' ').trim() : t;
+    s.core = ensureLine(s.core);
+    s.emotion = ensureLine(s.emotion);
+    s.social = ensureLine(s.social);
+    s.values = ensureLine(s.values);
+    s.cognition = ensureLine(s.cognition);
+    s.motivation = ensureLine(s.motivation);
+    if (s.summary) {
+      const coerceArr = (v: any) => Array.isArray(v) ? v.map((x:any)=> String(x)).filter(Boolean) : [];
+      s.summary.strengths = coerceArr(s.summary.strengths).slice(0,3);
+      s.summary.risks = coerceArr(s.summary.risks).slice(0,3);
+      s.summary.growth = coerceArr(s.summary.growth).slice(0,3);
+    }
+  }
+
   const parsed = ProfileSchema.safeParse(json);
   if (!parsed.success) {
     console.error("Schema validation failed:", parsed.error);
