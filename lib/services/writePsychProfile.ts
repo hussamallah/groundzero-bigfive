@@ -12,8 +12,15 @@ export async function writePsychProfile(callLLM: (args: {
   const facts = loadFacts();
   const p = predicates(facts);
 
-  const sys = await fetch("/prompts/psych_profile.system.txt").then(r => r.text());
-  const tmpl = await fetch("/prompts/psych_profile.user.txt").then(r => r.text());
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const sys = await fetch(`${origin}/prompts/psych_profile.system.txt`).then(r => {
+    if (!r.ok) throw new Error("Missing system prompt asset");
+    return r.text();
+  });
+  const tmpl = await fetch(`${origin}/prompts/psych_profile.user.txt`).then(r => {
+    if (!r.ok) throw new Error("Missing user prompt asset");
+    return r.text();
+  });
 
   const fill = (s: string) => s
     .replace("{{O.mean_raw}}", String(facts.domains.O.mean_raw))
@@ -37,6 +44,10 @@ export async function writePsychProfile(callLLM: (args: {
     json = JSON.parse(raw);
   } catch {
     throw new Error("AI did not return valid JSON");
+  }
+  // Coerce array-wrapped objects (some models return [ { ... } ])
+  if (Array.isArray(json)) {
+    json = json[0];
   }
   
   // Normalize borderline outputs
