@@ -13,14 +13,53 @@ export async function writePsychProfile(callLLM: (args: {
   const p = predicates(facts);
 
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const sys = await fetch(`${origin}/prompts/psych_profile.system.txt`).then(r => {
-    if (!r.ok) throw new Error("Missing system prompt asset");
-    return r.text();
-  });
-  const tmpl = await fetch(`${origin}/prompts/psych_profile.user.txt`).then(r => {
-    if (!r.ok) throw new Error("Missing user prompt asset");
-    return r.text();
-  });
+  const defaultSys = (
+    "You are a deterministic paraphraser. You never invent facts. " +
+    "You only rewrite blocks using the provided buckets and means. " +
+    "No emojis. No filler. 700 words max. Keep sections: Core Orientation, Emotional Regulation, Social Style, Interpersonal Values, Cognitive Style, Motivational Drivers, Summary Pattern. " +
+    "Use short, direct sentences. No clinical diagnoses. Return valid JSON matching the exact structure requested. " +
+    "Forbidden claims: do not state that \"pressure is manageable\" when Anxiety or Vulnerability is High; do not claim \"cooperation is a strength\" when Cooperation is Low; do not claim \"highly gregarious\" when Gregariousness is Low."
+  );
+  const defaultUser = (
+    "FACTS:\n" +
+    "- Openness mean_raw: {{O.mean_raw}}\n" +
+    "- Conscientiousness mean_raw: {{C.mean_raw}}\n" +
+    "- Extraversion mean_raw: {{E.mean_raw}}\n" +
+    "- Agreeableness mean_raw: {{A.mean_raw}}\n" +
+    "- Neuroticism mean_raw: {{N.mean_raw}}\n\n" +
+    "BUCKETS:\n" +
+    "- O: {{O.bucket_json}}\n" +
+    "- C: {{C.bucket_json}}\n" +
+    "- E: {{E.bucket_json}}\n" +
+    "- A: {{A.bucket_json}}\n" +
+    "- N: {{N.bucket_json}}\n\n" +
+    "MANDATORY LINES (include only when predicate true):\n" +
+    "- If O_high_C_high: \"You combine high openness with high conscientiousness. You explore new paths and still land results.\"\n" +
+    "- If N_lowAnx: include a sentence that anxiety is low and pressure is manageable.\n" +
+    "- If N_highImmod: include a one-line caution about impulse spikes.\n" +
+    "- If E_lowGregar: include a one-line guidance to choose rooms over crowds.\n" +
+    "- If A_lowCoop: include a one-line note that clarity beats consensus.\n" +
+    "- If A_highCoop: include a one-line note about cooperation as a strength.\n\n" +
+    "TASK:\n" +
+    "Write the full Psychological Profile with the fixed section headers. One to three sentences per section. Base every claim on FACTS and BUCKETS. Do not contradict buckets. Do not mention scores or percentages. " +
+    "Hard rules: every section string must be at least 60 characters; use one line per string (no embedded newlines). " +
+    "Conclude with a Summary Pattern: Strengths (3 items), Risks (1–3 items), Growth (3 items).\n\n" +
+    "Return ONLY valid JSON in this exact format:\n" +
+    "{\n  \"sections\": {\n    \"core\": \"string (>=60 chars, one line)\",\n    \"emotion\": \"string (>=60 chars, one line)\",\n    \"social\": \"string (>=60 chars, one line)\",\n    \"values\": \"string (>=60 chars, one line)\",\n    \"cognition\": \"string (>=60 chars, one line)\",\n    \"motivation\": \"string (>=60 chars, one line)\",\n    \"summary\": {\n      \"strengths\": [\"string\", \"string\", \"string\"],\n      \"risks\": [\"string\"],\n      \"growth\": [\"string\", \"string\", \"string\"]\n    }\n  }\n}\n"
+  );
+
+  async function fetchOrDefault(path: string, fallback: string): Promise<string> {
+    try {
+      const res = await fetch(`${origin}${path}`);
+      if (!res.ok) return fallback;
+      return await res.text();
+    } catch {
+      return fallback;
+    }
+  }
+
+  const sys = await fetchOrDefault('/prompts/psych_profile.system.txt', defaultSys);
+  const tmpl = await fetchOrDefault('/prompts/psych_profile.user.txt', defaultUser);
 
   const fill = (s: string) => s
     .replace("{{O.mean_raw}}", String(facts.domains.O.mean_raw))
