@@ -157,17 +157,27 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
   if (!domain){
     return (
       <div className="card">
-        <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <h2>Select domain</h2>
-            <p className="muted">Run the flow for one domain at a time. O, C, E, A, or N.</p>
-          </div>
-          <div><span className="pill">Deterministic • No RNG</span></div>
+        <div className="question-row">
+          <div className="q-left"><span className="domain-pill">Assessment</span></div>
+          <div className="q-center"><p>Choose a personality domain to explore</p></div>
+          <div className="q-right"><div className="count-pill"><span className="count">0/1</span></div></div>
         </div>
-        <div className="row mt16">
+        
+        <div className="facet-grid mt8">
           {(Object.keys(DOMAINS) as DomainKey[]).map(d=> (
-            <button key={d} className="domain-btn btn" onClick={()=>{ setDomain(d); reset(); }}>{DOMAINS[d].label}</button>
+            <button key={d} className="btn-chip" onClick={()=>{ setDomain(d); reset(); }}>
+              <b>{DOMAINS[d].label.split(' (')[0]}</b>
+              <small>{(DOMAIN_DESCRIPTIONS as any)[d]?.shortDescription || 'Personality assessment domain'}</small>
+              <div className="tags">
+                <span className="tag">{d}</span>
+                <span className="tag">{DOMAINS[d].facets.length} facets</span>
+              </div>
+            </button>
           ))}
+        </div>
+        
+        <div className="row mt16" style={{justifyContent:'center'}}>
+          <div><span className="pill">Deterministic • No RNG</span></div>
         </div>
       </div>
     );
@@ -176,12 +186,10 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
   if (!picksP){
     return (
       <div className="card">
-        <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <h2>Phase 1 — Q1 (Plus)</h2>
-            <p>{P1_PROMPTS[domain].q1}</p>
-          </div>
-          <div className="count-pill"><span className="count">{`${selectedCount}/3`}</span></div>
+        <div className="question-row">
+          <div className="q-left"><span className="domain-pill">{DOMAINS[domain].label.split(' (')[0]}</span></div>
+          <div className="q-center"><p>Select the 3 traits that best describe you.</p></div>
+          <div className="q-right"><div className="count-pill"><span className="count">{`${selectedCount}/3`}</span></div></div>
         </div>
         <FacetPickGrid key="phase1" domain={domain} facets={facets} required={3} onSubmit={(arr)=>{
           const p = Object.fromEntries(facets.map(f=>[f,0]));
@@ -196,12 +204,10 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
     const q1Selected = facets.filter(f => (picksP as any)[f] === 1);
     return (
       <div className="card">
-        <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <h2>Phase 1 — Q2 (Minus)</h2>
-            <p>{P1_PROMPTS[domain].q2}</p>
-          </div>
-          <div className="count-pill"><span className="count">{`${selectedCount}/2`}</span></div>
+        <div className="question-row">
+          <div className="q-left"><span className="domain-pill">{DOMAINS[domain].label.split(' (')[0]}</span></div>
+          <div className="q-center"><p>{P1_PROMPTS[domain].q2}</p></div>
+          <div className="q-right"><div className="count-pill"><span className="count">{`${selectedCount}/2`}</span></div></div>
         </div>
         <FacetPickGrid key="phase2" domain={domain} facets={q1Selected} required={2} onSubmit={(arr)=>{
           const m = Object.fromEntries(facets.map(f=>[f,0]));
@@ -224,13 +230,10 @@ export default function Assessment({ initialDomain, silentOnComplete, onComplete
     const required = Math.min(2, shortlist.length);
     return (
       <div className="card">
-        <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
-          <div>
-            <h2>Phase 1 — Q3 (Resolver)</h2>
-            <p>{P1_PROMPTS[domain].q3}</p>
-            <small className="muted">Why these? Picked & Dropped / Untouched.</small>
-          </div>
-          <div className="count-pill"><span className="count">{`${selectedCount}/${required}`}</span></div>
+        <div className="question-row">
+          <div className="q-left"><span className="domain-pill">{DOMAINS[domain].label.split(' (')[0]}</span></div>
+          <div className="q-center"><p>{P1_PROMPTS[domain].q3}</p><small className="muted">Why these? Picked & Dropped / Untouched.</small></div>
+          <div className="q-right"><div className="count-pill"><span className="count">{`${selectedCount}/${required}`}</span></div></div>
         </div>
         <FacetPickGrid key={`phase3-${shortlist.join(',')}`} domain={domain} facets={shortlist} required={required} tagsFor={tagsFor} onSubmit={(arr)=>{
           const t = Object.fromEntries(facets.map(f=>[f,0]));

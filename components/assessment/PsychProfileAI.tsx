@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { writePsychProfile } from "@/lib/services/writePsychProfile";
-import { ProfileOutput } from "@/lib/logic/schema";
+import { ProfileOutput, ProfileSchema } from "@/lib/logic/schema";
 
 export default function PsychProfileAI() {
   const [data, setData] = useState<ProfileOutput | null>(null);
@@ -18,17 +18,32 @@ export default function PsychProfileAI() {
           return;
         }
 
-        const cacheKey = `gz_psych_profile_${hash}`;
-        const lockKey = `gz_psych_profile_lock_${hash}`;
+        // Purge old v2 keys to prevent stale data showing extra lines
+        try {
+          localStorage.removeItem(`gz_psych_profile_v2_${hash}`);
+          localStorage.removeItem(`gz_psych_profile_v2_lock_${hash}`);
+          localStorage.removeItem(`gz_psych_profile_lock_${hash}`);
+        } catch {}
+
+        // v3 cache keys to enforce new 5-line Identity Mirror schema
+        const cacheKey = `gz_psych_profile_v3_${hash}`;
+        const lockKey = `gz_psych_profile_v3_lock_${hash}`;
         const now = Date.now();
         const lockRaw = localStorage.getItem(lockKey);
         const lockIsFresh = !!lockRaw && now - Number(lockRaw) < 120000; // 2 minutes
 
         const cached = localStorage.getItem(cacheKey);
         if (cached) {
-          setData(JSON.parse(cached));
-          setLoading(false);
-          return;
+          try {
+            const parsed = JSON.parse(cached);
+            const validated = ProfileSchema.safeParse(parsed);
+            if (validated.success) {
+              setData(validated.data);
+              setLoading(false);
+              return;
+            }
+          } catch {}
+          // If cached is invalid, fall through to regenerate
         }
 
         if (lockIsFresh) {
@@ -38,10 +53,18 @@ export default function PsychProfileAI() {
           const interval = setInterval(() => {
             const ready = localStorage.getItem(cacheKey);
             if (ready) {
-              clearInterval(interval);
-              setData(JSON.parse(ready));
-              setLoading(false);
-            } else if (Date.now() - start > maxWaitMs) {
+              try {
+                const parsed = JSON.parse(ready);
+                const validated = ProfileSchema.safeParse(parsed);
+                if (validated.success) {
+                  clearInterval(interval);
+                  setData(validated.data);
+                  setLoading(false);
+                  return;
+                }
+              } catch {}
+            }
+            if (Date.now() - start > maxWaitMs) {
               clearInterval(interval);
               setError("Profile generation timed out");
               setLoading(false);
@@ -73,7 +96,7 @@ export default function PsychProfileAI() {
         setLoading(false);
         try {
           const h = localStorage.getItem("gz_full_hash");
-          if (h) localStorage.removeItem(`gz_psych_profile_lock_${h}`);
+          if (h) localStorage.removeItem(`gz_psych_profile_v3_lock_${h}`);
         } catch {}
       }
     }
@@ -100,74 +123,19 @@ export default function PsychProfileAI() {
 
   if (!data) return null;
 
-  const s = data.sections;
+  const linesRaw = Array.isArray((data as any)?.lines) ? (data as any).lines as string[] : [];
+  const lines = linesRaw.slice(0, 5);
   const hash = typeof window !== "undefined" ? localStorage.getItem("gz_full_hash") : "unknown";
 
   return (
     <section className="card mt16" style={{ maxWidth: "80ch", marginLeft: "auto", marginRight: "auto" }}>
       <h3>AI Psychological Profile</h3>
       
-      <div style={{ marginTop: 24, fontSize: 14, lineHeight: 1.7, color: "#d6e5ff" }}>
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Core Orientation
-        </h4>
-        <p style={{ margin: 0 }}>{s.core}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Emotional Regulation
-        </h4>
-        <p style={{ margin: 0 }}>{s.emotion}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Social Style
-        </h4>
-        <p style={{ margin: 0 }}>{s.social}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Interpersonal Values
-        </h4>
-        <p style={{ margin: 0 }}>{s.values}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Cognitive Style
-        </h4>
-        <p style={{ margin: 0 }}>{s.cognition}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Motivational Drivers
-        </h4>
-        <p style={{ margin: 0 }}>{s.motivation}</p>
-
-        <h4 style={{ fontSize: 13, fontWeight: 600, color: "#9aa3ad", marginTop: 16, marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-          Summary Pattern
-        </h4>
-        <div style={{ marginTop: 8 }}>
-          <div style={{ marginBottom: 12 }}>
-            <strong style={{ color: "#9aa3ad" }}>Strengths:</strong>
-            <ul style={{ margin: "4px 0 0 0", paddingLeft: 20 }}>
-              {s.summary.strengths.map((str, i) => (
-                <li key={i}>{str}</li>
-              ))}
-            </ul>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <strong style={{ color: "#9aa3ad" }}>Risks:</strong>
-            <ul style={{ margin: "4px 0 0 0", paddingLeft: 20 }}>
-              {s.summary.risks.map((risk, i) => (
-                <li key={i}>{risk}</li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <strong style={{ color: "#9aa3ad" }}>Growth:</strong>
-            <ul style={{ margin: "4px 0 0 0", paddingLeft: 20 }}>
-              {s.summary.growth.map((grow, i) => (
-                <li key={i}>{grow}</li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
+      <ol style={{ marginTop: 16, color: "#d6e5ff", fontSize: 14, lineHeight: 1.7, paddingLeft: 20 }}>
+        {lines.map((l, i) => (
+          <li key={i} style={{ margin: '6px 0' }}>{l}</li>
+        ))}
+      </ol>
 
       <footer style={{ marginTop: 24, fontSize: 11, opacity: 0.5, color: "#9aa3ad" }}>
         suiteHash: {hash?.slice(0, 12)}...

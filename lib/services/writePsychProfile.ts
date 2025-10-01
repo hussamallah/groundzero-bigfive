@@ -1,6 +1,5 @@
 // Call wrapper with hard guards
 import { loadFacts } from "../data/buildPayload";
-import { predicates } from "../logic/predicates";
 import { ProfileSchema, ProfileOutput } from "../logic/schema";
 import { enforceGuards } from "../logic/guards";
 
@@ -10,110 +9,112 @@ export async function writePsychProfile(callLLM: (args: {
   temperature: number;
 }) => Promise<string>): Promise<ProfileOutput> {
   const facts = loadFacts();
-  const p = predicates(facts);
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const defaultSys = (
-    "You are a deterministic paraphraser. You never invent facts. " +
-    "You only rewrite blocks using the provided buckets and means. " +
-    "No emojis. No filler. 700 words max. Keep sections: Core Orientation, Emotional Regulation, Social Style, Interpersonal Values, Cognitive Style, Motivational Drivers, Summary Pattern. " +
-    "Use short, direct sentences. No clinical diagnoses. Return valid JSON matching the exact structure requested. " +
-    "Forbidden claims: do not state that \"pressure is manageable\" when Anxiety or Vulnerability is High; do not claim \"cooperation is a strength\" when Cooperation is Low; do not claim \"highly gregarious\" when Gregariousness is Low."
-  );
-  const defaultUser = (
-    "FACTS:\n" +
-    "- Openness mean_raw: {{O.mean_raw}}\n" +
-    "- Conscientiousness mean_raw: {{C.mean_raw}}\n" +
-    "- Extraversion mean_raw: {{E.mean_raw}}\n" +
-    "- Agreeableness mean_raw: {{A.mean_raw}}\n" +
-    "- Neuroticism mean_raw: {{N.mean_raw}}\n\n" +
-    "BUCKETS:\n" +
-    "- O: {{O.bucket_json}}\n" +
-    "- C: {{C.bucket_json}}\n" +
-    "- E: {{E.bucket_json}}\n" +
-    "- A: {{A.bucket_json}}\n" +
-    "- N: {{N.bucket_json}}\n\n" +
-    "MANDATORY LINES (include only when predicate true):\n" +
-    "- If O_high_C_high: \"You combine high openness with high conscientiousness. You explore new paths and still land results.\"\n" +
-    "- If N_lowAnx: include a sentence that anxiety is low and pressure is manageable.\n" +
-    "- If N_highImmod: include a one-line caution about impulse spikes.\n" +
-    "- If E_lowGregar: include a one-line guidance to choose rooms over crowds.\n" +
-    "- If A_lowCoop: include a one-line note that clarity beats consensus.\n" +
-    "- If A_highCoop: include a one-line note about cooperation as a strength.\n\n" +
-    "TASK:\n" +
-    "Write the full Psychological Profile with the fixed section headers. Two to four sentences per section. Base every claim on FACTS and BUCKETS. Do not contradict buckets. Do not mention scores or percentages. " +
-    "Hard rules: every section string must be at least 60 characters; use one line per string (no embedded newlines). " +
-    "Conclude with a Summary Pattern: Strengths (3 items), Risks (1–3 items), Growth (3 items).\n\n" +
-    "Return ONLY valid JSON in this exact format:\n" +
-    "{\n  \"sections\": {\n    \"core\": \"string (>=60 chars, one line)\",\n    \"emotion\": \"string (>=60 chars, one line)\",\n    \"social\": \"string (>=60 chars, one line)\",\n    \"values\": \"string (>=60 chars, one line)\",\n    \"cognition\": \"string (>=60 chars, one line)\",\n    \"motivation\": \"string (>=60 chars, one line)\",\n    \"summary\": {\n      \"strengths\": [\"string\", \"string\", \"string\"],\n      \"risks\": [\"string\"],\n      \"growth\": [\"string\", \"string\", \"string\"]\n    }\n  }\n}\n"
-  );
+  // Map domain mean to High/Medium/Low
+  const meanToBucket = (mean: number): 'High'|'Medium'|'Low' => {
+    if (mean >= 4.0) return 'High';
+    if (mean <= 2.0) return 'Low';
+    return 'Medium';
+  };
 
-  async function fetchOrDefault(path: string, fallback: string): Promise<string> {
-    try {
-      const res = await fetch(`${origin}${path}`);
-      if (!res.ok) return fallback;
-      return await res.text();
-    } catch {
-      return fallback;
-    }
-  }
+  const O_lvl = meanToBucket(facts.domains.O.mean_raw);
+  const C_lvl = meanToBucket(facts.domains.C.mean_raw);
+  const E_lvl = meanToBucket(facts.domains.E.mean_raw);
+  const A_lvl = meanToBucket(facts.domains.A.mean_raw);
+  const N_lvl = meanToBucket(facts.domains.N.mean_raw);
+  // Stability (S) is inverse of Neuroticism (N)
+  const invert = (v: 'High'|'Medium'|'Low'): 'High'|'Medium'|'Low' => (v === 'High' ? 'Low' : v === 'Low' ? 'High' : 'Medium');
+  const S_lvl = invert(N_lvl);
 
-  const sys = await fetchOrDefault('/prompts/psych_profile.system.txt', defaultSys);
-  const tmpl = await fetchOrDefault('/prompts/psych_profile.user.txt', defaultUser);
+  // Helper to read a facet bucket across domains safely
+  const facet = (domain: 'O'|'C'|'E'|'A'|'N', name: string): 'High'|'Medium'|'Low'|undefined => {
+    const d = (facts.domains as any)[domain];
+    return d?.bucket?.[name];
+  };
 
-  const fill = (s: string) => s
-    .replace("{{O.mean_raw}}", String(facts.domains.O.mean_raw))
-    .replace("{{C.mean_raw}}", String(facts.domains.C.mean_raw))
-    .replace("{{E.mean_raw}}", String(facts.domains.E.mean_raw))
-    .replace("{{A.mean_raw}}", String(facts.domains.A.mean_raw))
-    .replace("{{N.mean_raw}}", String(facts.domains.N.mean_raw))
-    .replace("{{O.bucket_json}}", JSON.stringify(facts.domains.O.bucket))
-    .replace("{{C.bucket_json}}", JSON.stringify(facts.domains.C.bucket))
-    .replace("{{E.bucket_json}}", JSON.stringify(facts.domains.E.bucket))
-    .replace("{{A.bucket_json}}", JSON.stringify(facts.domains.A.bucket))
-    .replace("{{N.bucket_json}}", JSON.stringify(facts.domains.N.bucket))
-    + `\n\nPREDICATES: ${JSON.stringify(p)}`;
+  // Build normalized facets object focused on rules used in the new prompt
+  const facetsPayload: Record<string, 'High'|'Medium'|'Low'|undefined> = {
+    // Openness
+    Imagination: facet('O','Imagination'),
+    ArtisticInterests: facet('O','Artistic Interests'),
+    Intellect: facet('O','Intellect'),
+    // Conscientiousness
+    SelfEfficacy: facet('C','Self-Efficacy'),
+    Orderliness: facet('C','Orderliness'),
+    Dutifulness: facet('C','Dutifulness'),
+    AchievementStriving: facet('C','Achievement-Striving') ?? facet('C','Achievement-Striving'),
+    SelfDiscipline: facet('C','Self-Discipline'),
+    // Extraversion
+    Friendliness: facet('E','Friendliness'),
+    Gregariousness: facet('E','Gregariousness'),
+    Assertiveness: facet('E','Assertiveness'),
+    // Agreeableness
+    Morality: facet('A','Morality'),
+    Cooperation: facet('A','Cooperation'),
+    // Neuroticism
+    Anxiety: facet('N','Anxiety'),
+    Anger: facet('N','Anger'),
+  };
 
-  const user = fill(tmpl);
+  // Identity Mirror system prompt (deterministic 5-sentence spec)
+  const systemPrompt = [
+    'Goal: Generate exactly 5 sentences that mirror the user based on Big Five facet outputs.',
+    'Style: Plain language, second-person ("You"), no jargon, balanced praise + risk, deterministic structure.',
+    'Inputs: Domain averages (O,C,E,A,N); Facet highs and lows; Conflict pairs; Social traits (Friendliness, Cooperation, Morality).',
+    'Rules:',
+    '1) Strength Anchor: Use strongest high facet(s). Format: "You rely on [high facet] and [high facet], which makes you quick to [behavior]."',
+    '2) Risk/Friction: Use sharpest lows or strongest negative domain. Format: "But your [low facet] and [low facet] often [risk behavior], especially when [trigger]."',
+    '3) Domain Identity Pattern: Contrast two domains. Format: "You show a mix of [domain] and [domain], which makes you [contrast]."',
+    '4) Social Mirror: How others experience them. Format: "Others tend to see you as [high social trait], but they may also notice [low social drawback]."',
+    '5) Bridge to Results: Always end with a forward path. Format: "The 30 cards below break this into detail and show where you can reinforce or rebalance."',
+    'Constraints: Always 5 sentences. No use of terms like "facet" or "domain" or psychometric jargon. Must mention at least 1 strength and 1 risk. Include a "how others see you" line. Include a bridge line to results. Deterministic: same inputs -> same output.',
+    'Output: Return ONLY JSON as { "lines": ["...", "...", "...", "...", "..."] } with exactly 5 strings.'
+  ].join(' ');
 
-  const raw = await callLLM({ system: sys, user, temperature: 0 });
-  
-  let json: any;
+  // User payload = domains + facets
+  const userPayload = {
+    domains: { O: O_lvl, C: C_lvl, E: E_lvl, A: A_lvl, S: S_lvl },
+    facets: facetsPayload,
+  };
+
+  const raw = await callLLM({ system: systemPrompt, user: JSON.stringify(userPayload), temperature: 0 });
+
+  // Try to parse into { lines: string[] }
+  let parsedAny: any = null;
   try {
-    json = JSON.parse(raw);
+    parsedAny = JSON.parse(raw);
   } catch {
-    throw new Error("AI did not return valid JSON");
-  }
-  // Coerce array-wrapped objects (some models return [ { ... } ])
-  if (Array.isArray(json)) {
-    json = json[0];
-  }
-  
-  // Normalize borderline outputs
-  if (json && json.sections) {
-    const s = json.sections;
-    const ensureLine = (t: any) => typeof t === 'string' ? t.replace(/\n+/g, ' ').trim() : t;
-    s.core = ensureLine(s.core);
-    s.emotion = ensureLine(s.emotion);
-    s.social = ensureLine(s.social);
-    s.values = ensureLine(s.values);
-    s.cognition = ensureLine(s.cognition);
-    s.motivation = ensureLine(s.motivation);
-    if (s.summary) {
-      const coerceArr = (v: any) => Array.isArray(v) ? v.map((x:any)=> String(x)).filter(Boolean) : [];
-      s.summary.strengths = coerceArr(s.summary.strengths).slice(0,3);
-      s.summary.risks = coerceArr(s.summary.risks).slice(0,3);
-      s.summary.growth = coerceArr(s.summary.growth).slice(0,3);
-    }
+    // If it's plain text, split into sentences and wrap
+    const candidates = raw
+      .split(/\r?\n|(?<=[.!?])\s+/)
+      .map(s=> s.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+    parsedAny = { lines: candidates };
   }
 
-  const parsed = ProfileSchema.safeParse(json);
-  if (!parsed.success) {
-    console.error("Schema validation failed:", parsed.error);
-    throw new Error("Profile failed schema guard");
+  // Some models return top-level array
+  if (Array.isArray(parsedAny)) {
+    parsedAny = { lines: parsedAny };
   }
-  // enforce deterministic guardrails against contradictions
-  const guarded = enforceGuards(facts, parsed.data);
 
+  // Normalize: trim, collapse spaces, enforce exactly 5 lines and formats
+  if (parsedAny && Array.isArray(parsedAny.lines)) {
+    parsedAny.lines = parsedAny.lines
+      .map((s: any) => String(s).replace(/\s+/g, ' ').trim())
+      .filter((s: string) => !!s);
+
+    // If not exactly 5, attempt to synthesize deterministic placeholders to reach 5
+    if (parsedAny.lines.length > 5) parsedAny.lines = parsedAny.lines.slice(0,5);
+    while (parsedAny.lines.length < 5) parsedAny.lines.push('The 30 cards below break this into detail and show where you can reinforce or rebalance.');
+  }
+
+  const validated = ProfileSchema.safeParse(parsedAny);
+  if (!validated.success) {
+    console.error('Schema validation failed:', validated.error, 'Raw:', raw);
+    throw new Error('Profile failed schema guard');
+  }
+
+  const guarded = enforceGuards(facts, validated.data);
   return guarded;
 }

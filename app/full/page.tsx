@@ -3,7 +3,7 @@ import FullAssessment from "@/components/assessment/FullAssessment";
 
 export default function FullPage(){
   return (
-    <main className="app">
+    <main className="full-center">
       <FullAssessment />
     </main>
   );

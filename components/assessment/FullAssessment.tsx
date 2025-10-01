@@ -18,29 +18,36 @@ export default function FullAssessment(){
   const router = useRouter();
 
   useEffect(()=>{
-    // Auto-compute hash when all domains are completed
-    async function compute(){
+    // Save full answers server-side and redirect to ID-based result
+    async function finalize(){
       const normalized = results.map(r=>({domain:r.domain, payload:r.payload}));
-      const hash = await sha256(stableStringify(normalized));
-      setSuiteHash(hash);
-      setVerifyStatus('idle');
-      localStorage.setItem('gz_full_results', JSON.stringify(results));
-      localStorage.setItem('gz_full_hash', hash);
-      router.replace('/results');
+      try {
+        const res = await fetch('/api/tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answers: normalized })
+        });
+        if (!res.ok) throw new Error('save failed');
+        const json = await res.json();
+        const id = json?.id as string;
+        // Clear local-only artifacts
+        try {
+          localStorage.removeItem('gz_full_results');
+          localStorage.removeItem('gz_full_hash');
+          localStorage.removeItem('gz_full_runs');
+          localStorage.setItem('gz_result_id', id);
+        } catch {}
+        router.replace(`/result/${encodeURIComponent(id)}`);
+      } catch {
+        // Fallback: keep local state so user can retry/save
+        setVerifyStatus('fail');
+      }
     }
-    if (done && results.length === domainOrder.length){ compute(); }
+    if (done && results.length === domainOrder.length){ finalize(); }
   }, [done, results, domainOrder.length, router]);
 
   return (
     <div className="card">
-      <div className="row-nowrap" style={{justifyContent:'space-between',alignItems:'center'}}>
-        <div>
-          <h2>Full Test — All Five Domains</h2>
-          <p className="muted">Runs O → C → E → A → N, one after another.</p>
-        </div>
-        <div className="pill">Progress {Math.min(idx,5)} / 5</div>
-      </div>
-
       {!done ? (
         <DomainRunner domain={domainOrder[idx]} onComplete={(payload)=>{
           setResults(prev => prev.concat({domain: domainOrder[idx], payload}));

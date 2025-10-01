@@ -1,0 +1,80 @@
+---
+alwaysApply: true
+---
+## Ground Zero Big Five – Project Structure Map
+
+Use these links to jump directly to important files. Paths are relative to the repo root and openable in Cursor via the links.
+
+### App Router (Next.js)
+- Entry layout: [app/layout.tsx](mdc:app/layout.tsx)
+- Home page: [app/page.tsx](mdc:app/page.tsx)
+
+#### Feature Routes
+- Assessment (per-domain index): [app/assessment/page.tsx](mdc:app/assessment/page.tsx)
+- Assessment (single domain): [app/assessment/[domain]/page.tsx](mdc:app/assessment/[domain]/page.tsx)
+- Full assessment: [app/full/page.tsx](mdc:app/full/page.tsx)
+- Results: [app/results/page.tsx](mdc:app/results/page.tsx)
+- Who/intro: [app/who/page.tsx](mdc:app/who/page.tsx)
+
+#### API Routes
+- LLM endpoint: [app/api/llm/route.ts](mdc:app/api/llm/route.ts)
+
+### UI Components
+- Assessment UI: [components/assessment/Assessment.tsx](mdc:components/assessment/Assessment.tsx)
+- Full assessment UI: [components/assessment/FullAssessment.tsx](mdc:components/assessment/FullAssessment.tsx)
+- Full results UI: [components/assessment/FullResults.tsx](mdc:components/assessment/FullResults.tsx)
+- Psych profile AI UI: [components/assessment/PsychProfileAI.tsx](mdc:components/assessment/PsychProfileAI.tsx)
+
+### Domain Logic and Utilities (`lib/`)
+- Big Five domain
+  - Constants: [lib/bigfive/constants.ts](mdc:lib/bigfive/constants.ts)
+  - Formatting helpers: [lib/bigfive/format.ts](mdc:lib/bigfive/format.ts)
+  - Core logic: [lib/bigfive/logic.ts](mdc:lib/bigfive/logic.ts)
+  - WHO bank renderer: [lib/bigfive/who_bank_renderer.ts](mdc:lib/bigfive/who_bank_renderer.ts)
+  - WHO helpers: [lib/bigfive/who.ts](mdc:lib/bigfive/who.ts)
+
+- Crypto utilities
+  - SHA-256: [lib/crypto/sha256.ts](mdc:lib/crypto/sha256.ts)
+
+- Data shaping
+  - Build payload for AI/services: [lib/data/buildPayload.ts](mdc:lib/data/buildPayload.ts)
+
+- Logic: guards, predicates, schemas
+  - Guards: [lib/logic/guards.ts](mdc:lib/logic/guards.ts)
+  - Predicates: [lib/logic/predicates.ts](mdc:lib/logic/predicates.ts)
+  - Zod or schema utils: [lib/logic/schema.ts](mdc:lib/logic/schema.ts)
+
+- Services
+  - Psych profile writer: [lib/services/writePsychProfile.ts](mdc:lib/services/writePsychProfile.ts)
+
+### Prompts and AI Content
+- System prompt: [public/prompts/psych_profile.system.txt](mdc:public/prompts/psych_profile.system.txt)
+- User prompt: [public/prompts/psych_profile.user.txt](mdc:public/prompts/psych_profile.user.txt)
+
+### Docs
+- AI profile setup: [docs/AI_PROFILE_SETUP.md](mdc:docs/AI_PROFILE_SETUP.md)
+
+### Global Styles and Types
+- Global CSS: [styles/globals.css](mdc:styles/globals.css)
+- JSX type augmentations: [types/jsx.d.ts](mdc:types/jsx.d.ts)
+
+### Config and Tooling
+- Next.js config: [next.config.mjs](mdc:next.config.mjs)
+- TypeScript config: [tsconfig.json](mdc:tsconfig.json)
+- Package manifest: [package.json](mdc:package.json)
+- Next type helpers: [next-env.d.ts](mdc:next-env.d.ts)
+
+### Data Files and References (root)
+- WHO you are bank: [who_you_are_bank.json](mdc:who_you_are_bank.json)
+- Facet interpretations (backup): [facet_interpretations_backup.json](mdc:facet_interpretations_backup.json)
+
+### Quick Orientation
+- Start with the route-level pages in `app/` to see navigation flow.
+- Drill into UI under `components/assessment/` for rendering and interactions.
+- Business rules and transformations live under `lib/` (Big Five domain logic, schema validation, and service calls).
+- AI prompts in `public/prompts/` inform the LLM behavior wired from `app/api/llm/route.ts` and service code.
+
+### Conventions
+- App Router organizes pages by directory in `app/` with `page.tsx` as the route entry.
+- Server routes live under `app/api/**/route.ts`.
+- Cross-cutting helpers and domain logic live under `lib/**`.

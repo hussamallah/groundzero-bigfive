@@ -10,8 +10,37 @@ export default function WhoPage(){
   useEffect(()=>{
     async function run(){
       try{
-        const raw = localStorage.getItem('gz_full_results');
-        const suiteHash = localStorage.getItem('gz_full_hash');
+        let raw = localStorage.getItem('gz_full_results');
+        let suiteHash = localStorage.getItem('gz_full_hash');
+        // Prefer ID from URL if present
+        try {
+          const url = new URL(window.location.href);
+          const idFromUrl = url.searchParams.get('id');
+          if (idFromUrl) localStorage.setItem('gz_result_id', idFromUrl);
+        } catch {}
+        const id = localStorage.getItem('gz_result_id');
+        if ((!raw || !suiteHash) && id){
+          try{
+            const res = await fetch(`/api/tests/${encodeURIComponent(id)}`);
+            if (res.ok){
+              const json = await res.json();
+              const answers = Array.isArray(json?.answers) ? json.answers : [];
+              raw = JSON.stringify(answers);
+              localStorage.setItem('gz_full_results', raw);
+              // prefer server suiteHash, otherwise recompute
+              suiteHash = (json?.suiteHash as string) || null as any;
+              if (!suiteHash){
+                const { stableStringify } = await import("@/lib/bigfive/format");
+                const { sha256 } = await import("@/lib/crypto/sha256");
+                const normalized = answers.map((r:any)=>({domain:r.domain, payload:r.payload}));
+                suiteHash = await sha256(stableStringify(normalized));
+              }
+              localStorage.setItem('gz_full_hash', suiteHash || '');
+              // If server provided a prebuilt who view, use it
+              if (json?.whoView){ setWho(json.whoView); return; }
+            }
+          } catch {}
+        }
         if (!raw){ setError('No results found. Run the full assessment first.'); return; }
         const data = JSON.parse(raw);
         const payload = await buildWhoFromFullResults(data, suiteHash);
@@ -35,7 +64,6 @@ export default function WhoPage(){
           <Deterministic who={who} />
           <PsychProfileAI />
           <CTA who={who} />
-          <FloatingRec who={who} />
         </div>
       )}
     </main>
@@ -258,82 +286,5 @@ function Deterministic({ who }:{ who:any }){
   );
 }
 
-function FloatingRec({ who }:{ who:any }){
-  const rec = who.upsellRec as undefined | { id:'override'|'compare'|'versus'; title:string; why:string; rejects:string[] };
-  if (!rec) return null;
-
-  const [isVisible, setIsVisible] = useState(true);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      // Get the CTA section by ID
-      const ctaSection = document.getElementById('cta-section');
-      if (ctaSection) {
-        const rect = ctaSection.getBoundingClientRect();
-        // Hide floating card only when CTA section is 35% visible from the top
-        const ctaHeight = rect.height;
-        const visibleThreshold = window.innerHeight - (ctaHeight * 0.35); // 35% of CTA height
-        const isCtaVisible = rect.top < visibleThreshold;
-        setIsVisible(!isCtaVisible);
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    handleScroll(); // Check initial state
-
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  if (!isVisible) return null;
-
-  // Map chosen rec to card copy
-  const map: Record<'override'|'compare'|'versus', { title:string; desc:string; cta:string; note:string }>= {
-    override: {
-      title: 'Override Premium — $7',
-      desc: 'You install behaviors where you are weak or inconsistent. One cue, one action, one quick reset. Repeat for 14 days until the lever holds under load. Locked to your run code and output is verifiable.',
-      cta: 'Start Override — $7',
-      note: ''
-    },
-    compare: {
-      title: 'Compatibility — 3 cards for $1.50',
-      desc: 'You see how two people actually operate together. It flags alignment and friction and tells you what to try next. Verdict is deterministic and you can verify it. Both people need free results.',
-      cta: 'Compare us',
-      note: 'Requires both free results'
-    },
-    versus: {
-      title: 'You vs Them — 3 cards for $1.50',
-      desc: 'You get a clean side-by-side read of O C E A N. It calls the biggest gap and strongest sync so decisions are fast. Screenshot-ready and verifiable. Both people need free results.',
-      cta: 'See the matchup',
-      note: 'Requires both free results'
-    }
-  };
-  const c = map[rec.id];
-
-  return (
-    <div style={{position:'fixed', right:'50%', bottom:16, transform:'translateX(50%)', zIndex:1000}}>
-      <div className="card" style={{
-        background:'#0b0f19', border:'1px solid rgba(245,197,24,0.6)', boxShadow:'0 0 40px -10px rgba(245,197,24,.5)',
-        borderRadius:12, padding:16, width:670
-      }}>
-        <button className="btn" style={{marginBottom:12, background:'#f1c40f', color:'#000', width:'100%', padding:'6px 14px'}}>
-          <div style={{fontSize:12, lineHeight:1.8, color:'#000000', fontWeight:'bold'}}>
-            <div>
-              {rec.id === 'override' ? 'Override — explanatory "why you"' :
-               rec.id === 'compare' ? 'Compatibility — explanatory "why you"' :
-               'You vs Them — explanatory "why you"'}
-            </div>
-          </div>
-        </button>
-        <div className="row-nowrap" style={{justifyContent:'space-between', alignItems:'center'}}>
-          <div style={{color:'#f1c40f', fontWeight:600, letterSpacing:0.5}}>{c.title}</div>
-          <span className="badge" style={{background:'#f1c40f', color:'#000'}}>Recommended</span>
-        </div>
-        <div style={{marginTop:6, fontSize:11, color:'rgba(255, 240, 200, 0.9)', lineHeight:1.4}}>
-          {who.upsellRec?.whyDetailed || rec.why}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 

@@ -1,20 +1,16 @@
 // Output schema guard using Zod
 import { z } from "zod";
 
+// Identity Mirror output: exactly 5 lines
 export const ProfileSchema = z.object({
-  sections: z.object({
-    core: z.string().min(30).max(400),
-    emotion: z.string().min(30).max(300),
-    social: z.string().min(30).max(300),
-    values: z.string().min(30).max(300),
-    cognition: z.string().min(30).max(300),
-    motivation: z.string().min(30).max(300),
-    summary: z.object({
-      strengths: z.array(z.string()).min(1).max(3),
-      risks: z.array(z.string()).min(0).max(3),
-      growth: z.array(z.string()).min(1).max(3),
-    }),
-  }),
+  lines: z
+    .array(
+      z
+        .string()
+        .min(6) // enforce some minimal content; exact word count handled upstream
+        .max(160)
+    )
+    .length(5),
 });
 
 export type ProfileOutput = z.infer<typeof ProfileSchema>;

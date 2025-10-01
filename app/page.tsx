@@ -15,10 +15,66 @@ export default function HomePage() {
 
   async function handleLoadByHash(){
     try{
-      const raw = localStorage.getItem('gz_full_results');
-      const stored = localStorage.getItem('gz_full_hash');
-      if (!raw || !stored){ setVerifyStatus('fail'); return; }
-      if (stored !== hashInput){ setVerifyStatus('fail'); return; }
+      let raw = localStorage.getItem('gz_full_results');
+      let stored = localStorage.getItem('gz_full_hash');
+      if (!raw || !stored){
+        // Try hydrate from gz_full_runs map by pasted hash
+        const runsRaw = localStorage.getItem('gz_full_runs');
+        const runs = runsRaw ? JSON.parse(runsRaw) : {};
+        const byHash = runs[hashInput];
+        if (byHash){
+          raw = JSON.stringify(byHash);
+          stored = hashInput;
+          localStorage.setItem('gz_full_results', raw);
+          localStorage.setItem('gz_full_hash', stored);
+        } else {
+          // Fallback to server fetch by hash
+          try {
+            const res = await fetch(`/api/runs?hash=${encodeURIComponent(hashInput)}`);
+            if (res.ok){
+              const json = await res.json();
+              const results = Array.isArray(json?.results) ? json.results : null;
+              if (results){
+                raw = JSON.stringify(results);
+                stored = hashInput;
+                localStorage.setItem('gz_full_results', raw);
+                localStorage.setItem('gz_full_hash', stored);
+                // also hydrate local runs map
+                try{
+                  const rr = localStorage.getItem('gz_full_runs');
+                  const m = rr ? JSON.parse(rr) : {};
+                  m[hashInput] = results;
+                  localStorage.setItem('gz_full_runs', JSON.stringify(m));
+                } catch {}
+              }
+            }
+          } catch {}
+        }
+      }
+      if (!raw || !stored){
+        // As final fallback, ask server to map suiteHash -> id
+        try{
+          const r = await fetch(`/api/tests/by-hash?hash=${encodeURIComponent(hashInput)}`);
+          if (r.ok){
+            const j = await r.json();
+            const id = j?.id as string;
+            if (id){ router.push(`/result/${encodeURIComponent(id)}`); return; }
+          }
+        } catch {}
+        setVerifyStatus('fail'); return;
+      }
+      if (stored !== hashInput){
+        // If local hash differs but server has mapping, redirect to ID
+        try{
+          const r = await fetch(`/api/tests/by-hash?hash=${encodeURIComponent(hashInput)}`);
+          if (r.ok){
+            const j = await r.json();
+            const id = j?.id as string;
+            if (id){ router.push(`/result/${encodeURIComponent(id)}`); return; }
+          }
+        } catch {}
+        setVerifyStatus('fail'); return;
+      }
       setVerifyStatus('ok');
       router.push('/results');
     } catch {
@@ -51,6 +107,19 @@ export default function HomePage() {
       localStorage.setItem('gz_full_results', JSON.stringify(normalized));
       const hash = await sha256(stableStringify(normalized));
       localStorage.setItem('gz_full_hash', hash);
+      try {
+        const runsRaw = localStorage.getItem('gz_full_runs');
+        const runs = runsRaw ? JSON.parse(runsRaw) : {};
+        runs[hash] = normalized;
+        localStorage.setItem('gz_full_runs', JSON.stringify(runs));
+      } catch {}
+      try {
+        await fetch('/api/runs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ hash, results: normalized })
+        });
+      } catch {}
       setHashInput(hash);
       setVerifyStatus('ok');
       router.push('/results');
@@ -61,8 +130,11 @@ export default function HomePage() {
 
   return (
     <main className="app">
-      <h1>Ground Zero — Per-Domain Assessment</h1>
-      <p className="muted">Deterministic. No RNG. Phase 1 → Phase 2 → Phase 3.</p>
+      <div className="question-row" style={{marginBottom:16}}>
+        <div className="q-left"><span className="domain-pill">Welcome</span></div>
+        <div className="q-center"><h1 style={{margin:0}}>Ground Zero — Per-Domain Assessment</h1></div>
+        <div className="q-right"><span className="count-pill">Start</span></div>
+      </div>
 
       <div className="row mt16">
         <button className={`btn${tab==='run'?' selected':''}`} onClick={()=> setTab('run')}>Run</button>
@@ -73,8 +145,8 @@ export default function HomePage() {
         <div className="card" style={{marginTop: 16}}>
           <p>Select how you want to run the assessment.</p>
           <div className="row" style={{marginTop: 8}}>
-            <a className="btn" href="/assessment">Run one domain at a time</a>
-            <a className="btn" href="/full">Run full test (all five)</a>
+            <a className="btn" href="/assessment">Start Assessment</a>
+            <a className="btn" href="/full">Full Test (All Domains)</a>
           </div>
         </div>
       ) : (
