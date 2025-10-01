@@ -41,7 +41,7 @@ export async function writePsychProfile(callLLM: (args: {
     "- If A_lowCoop: include a one-line note that clarity beats consensus.\n" +
     "- If A_highCoop: include a one-line note about cooperation as a strength.\n\n" +
     "TASK:\n" +
-    "Write the full Psychological Profile with the fixed section headers. One to three sentences per section. Base every claim on FACTS and BUCKETS. Do not contradict buckets. Do not mention scores or percentages. " +
+    "Write the full Psychological Profile with the fixed section headers. Two to four sentences per section. Base every claim on FACTS and BUCKETS. Do not contradict buckets. Do not mention scores or percentages. " +
     "Hard rules: every section string must be at least 60 characters; use one line per string (no embedded newlines). " +
     "Conclude with a Summary Pattern: Strengths (3 items), Risks (1–3 items), Growth (3 items).\n\n" +
     "Return ONLY valid JSON in this exact format:\n" +

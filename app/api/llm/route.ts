@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
         generationConfig: {
           temperature: typeof temperature === "number" ? temperature : 0,
           topP: 1,
-          maxOutputTokens: 1200,
+          maxOutputTokens: 2048,
           responseMimeType: "application/json",
         }
       };
@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
         generationConfig: {
           temperature: typeof temperature === "number" ? temperature : 0,
           topP: 1,
-          maxOutputTokens: 1200,
+          maxOutputTokens: 2048,
           responseMimeType: "application/json",
         }
       };
