@@ -40,7 +40,7 @@ export default function FullAssessment(){
           localStorage.removeItem('gz_full_runs');
           localStorage.setItem('gz_result_id', id);
         } catch {}
-        router.replace(`/result/${encodeURIComponent(id)}`);
+        router.replace(`/who?id=${encodeURIComponent(id)}`);
       } catch {
         // Fallback: keep local state so user can retry/save
         setVerifyStatus('fail');

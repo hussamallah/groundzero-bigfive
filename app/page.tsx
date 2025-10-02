@@ -12,7 +12,6 @@ export default function HomePage() {
   const [domainVerifyStatus, setDomainVerifyStatus] = useState<'idle'|'ok'|'fail'>('idle');
   const fileRef = useRef<HTMLInputElement|null>(null);
   const router = useRouter();
-  useEffect(()=>{ router.replace('/who'); },[]);
 
   async function handleLoadByHash(){
     try{

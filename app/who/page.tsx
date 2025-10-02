@@ -66,15 +66,17 @@ export default function WhoPage(){
   useEffect(()=>{
     async function run(){
       try{
+        // Require id
+        const url = new URL(window.location.href);
+        const idFromUrl = url.searchParams.get('id');
+        if (!idFromUrl){
+          setError('Missing id. Access Who via your results link.');
+          return;
+        }
+        localStorage.setItem('gz_result_id', idFromUrl);
         let raw = localStorage.getItem('gz_full_results');
         let suiteHash = localStorage.getItem('gz_full_hash');
-        // Prefer ID from URL if present
-        try {
-          const url = new URL(window.location.href);
-          const idFromUrl = url.searchParams.get('id');
-          if (idFromUrl) localStorage.setItem('gz_result_id', idFromUrl);
-        } catch {}
-        const id = localStorage.getItem('gz_result_id');
+        const id = idFromUrl;
         if ((!raw || !suiteHash) && id){
           try{
             const res = await fetch(`/api/tests/${encodeURIComponent(id)}`);
@@ -149,7 +151,7 @@ export default function WhoPage(){
         </>
       )}
       <div style={{marginTop:24, display:'flex', justifyContent:'center'}}>
-        <a href="/results" className="btn">View Full Results</a>
+        <a href={`/result/${encodeURIComponent(localStorage.getItem('gz_result_id')||'')}`} className="btn">View Full Results</a>
       </div>
     </div>
   );
