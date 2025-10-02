@@ -2,10 +2,66 @@
 import { useEffect, useMemo, useState } from "react";
 import { buildWhoFromFullResults } from "@/lib/bigfive/who";
 import PsychProfileAI from "@/components/assessment/PsychProfileAI";
+import { buildHandoff } from "@/lib/bigfive/handoff";
+import LifeSignals from "@components/who/LifeSignals";
+import IdentityMirror from "@components/who/IdentityMirror";
+import AuthorityBar from "@components/who/AuthorityBar";
+import FiveCardResults from "@components/who/FiveCardResults";
+import { useTelemetry } from "@components/who/useTelemetry";
+import { canonicalFacets } from "@/lib/bigfive/constants";
+import { buildIdentityMirror } from "@/lib/bigfive/identityMirror";
 
 export default function WhoPage(){
   const [who, setWho] = useState<any|null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [handoff, setHandoff] = useState<any|null>(null);
+  const [fullResults, setFullResults] = useState<any[]>([]);
+  const telemetry = useTelemetry(handoff?.hash || '');
+  const [mounted, setMounted] = useState(false);
+  useEffect(()=> setMounted(true), []);
+
+  // Build deterministic Identity Mirror lines from domain means, facet buckets, and top conflict
+  const identityMirrorLines = useMemo(()=>{
+    try{
+      if (!who || !handoff || !Array.isArray(fullResults) || fullResults.length===0) return [] as string[];
+      const domainMeans = who?.derived?.domainMeans as Record<'O'|'C'|'E'|'A'|'N', number>;
+
+      type Bucket = 'High'|'Medium'|'Low';
+      const facets: Array<{ domain: 'O'|'C'|'E'|'A'|'N'; facet: string; raw: number; bucket: Bucket }> = [];
+      for (const r of fullResults){
+        const d = r.domain as 'O'|'C'|'E'|'A'|'N';
+        const list = canonicalFacets(d);
+        for (const f of list){
+          const raw = r?.payload?.phase2?.A_raw?.[f];
+          const bucket = r?.payload?.final?.bucket?.[f] as Bucket | undefined;
+          facets.push({ domain: d, facet: f, raw: typeof raw==='number'? raw : 3, bucket: (bucket==='High' || bucket==='Medium' || bucket==='Low') ? bucket : 'Medium' });
+        }
+      }
+
+      // Compute top conflict in catalog order
+      const find = (domain: 'O'|'C'|'E'|'A'|'N', facetName: string) => facets.find(x=> x.domain===domain && x.facet===facetName);
+      const conflicts: Array<{ left: string; right: string; id: number }> = [];
+      // 1. Assertiveness↑ ∧ Anxiety↑
+      const c1L = find('E','Assertiveness');
+      const c1R = find('N','Anxiety');
+      if (c1L?.bucket==='High' && c1R?.bucket==='High') conflicts.push({ left: 'Assertiveness↑', right: 'Anxiety↑', id: 1 });
+      // 2. Self-Efficacy↑ ∧ Depression↑
+      const c2L = find('C','Self-Efficacy');
+      const c2R = find('N','Depression');
+      if (!conflicts.length && c2L?.bucket==='High' && c2R?.bucket==='High') conflicts.push({ left: 'Self-Efficacy↑', right: 'Depression↑', id: 2 });
+      // 3. Trust↓ ∧ Anger↑
+      const c3L = find('A','Trust');
+      const c3R = find('N','Anger');
+      if (!conflicts.length && c3L?.bucket==='Low' && c3R?.bucket==='High') conflicts.push({ left: 'Trust↓', right: 'Anger↑', id: 3 });
+      // 4. Cooperation↓ ∧ Dominance↑ (Assertiveness≈Dominance)
+      const c4L = find('A','Cooperation');
+      const c4R = find('E','Assertiveness');
+      if (!conflicts.length && c4L?.bucket==='Low' && c4R?.bucket==='High') conflicts.push({ left: 'Cooperation↓', right: 'Dominance↑', id: 4 });
+
+      const lines = buildIdentityMirror({ domainMeans, facets, conflicts }, (handoff.hash as string) || '');
+      return Array.isArray(lines) ? lines.slice(0,5) : [];
+    } catch { return [] as string[]; }
+  }, [who, handoff, fullResults]);
 
   useEffect(()=>{
     async function run(){
@@ -44,29 +100,58 @@ export default function WhoPage(){
         if (!raw){ setError('No results found. Run the full assessment first.'); return; }
         const data = JSON.parse(raw);
         const payload = await buildWhoFromFullResults(data, suiteHash);
+        const ho = await buildHandoff(data, suiteHash||'');
+        localStorage.setItem('gz_handoff', JSON.stringify(ho));
         setWho(payload);
+        setHandoff(ho);
+        setFullResults(data);
       } catch(e:any){ setError(e?.message || 'Failed to build Who profile'); }
     }
     run();
   }, []);
-
   
+  // Fire view_who telemetry on mount
+  useEffect(() => {
+    if (handoff?.hash) {
+      telemetry.send('view_who');
+    }
+  }, [handoff?.hash, telemetry]);
+
+  if (!mounted) return null;
 
   return (
-    <main className="app">
-      <div style={{textAlign: 'center', marginBottom: '24px'}}>
-        <h1 style={{fontSize: '32px', margin: '0', fontWeight: '600'}}>Who You Are</h1>
-      </div>
+    <div style={{ 
+      fontFamily: 'Arial, sans-serif', 
+      background: '#111', 
+      color: '#eee', 
+      margin: 0, 
+      padding: '20px',
+      minHeight: '100vh'
+    }}>
+      {handoff && <AuthorityBar hash={handoff.hash} />}
+      
+      <h1 style={{ margin: '20px 0', fontSize: '32px', fontWeight: 'normal' }}>Who You Are</h1>
+      <p style={{ margin: '0 0 20px 0', fontSize: '16px', color: '#aaa' }}>Short read. Clear pattern. Next step included.</p>
 
-      {error ? <p className="muted" style={{color:'#ff7675'}}>{error}</p> : null}
-      {!who ? <p className="muted">Building your profile…</p> : (
-        <div>
-          <Deterministic who={who} />
-          <PsychProfileAI />
-          <CTA who={who} />
-        </div>
+      {error ? <p style={{color:'#ff7675'}}>{error}</p> : null}
+      {!who ? <p style={{color:'#aaa'}}>Building your profile…</p> : (
+        <>
+          <IdentityMirror 
+            lines={identityMirrorLines} 
+            onSeen={() => telemetry.send('mirror_seen')}
+          />
+          <LifeSignals means={who.derived.domainMeans} />
+          <FiveCardResults 
+            data={fullResults}
+            onCardOpen={(cardType) => telemetry.send('preview_card_open', { card_type: cardType })}
+            onOfferSeen={(offerType) => telemetry.send(`offer_seen_${offerType}` as any)}
+          />
+        </>
       )}
-    </main>
+      <div style={{marginTop:24, display:'flex', justifyContent:'center'}}>
+        <a href="/results" className="btn">View Full Results</a>
+      </div>
+    </div>
   );
 }
 

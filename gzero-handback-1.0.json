@@ -1,0 +1,243 @@
+{
+    "version": "gzero-handback-1.0",
+    "scales": {
+      "domain_min": 1,
+      "domain_max": 5
+    },
+    "indices": {
+      "T": "clamp01((N-1)/4)",
+      "P_raw": "wO*O + wE*E + wC*C",
+      "P": "clamp01((P_raw/5 - 0.2)/0.8)",
+      "S": "clamp01((A-1)/4)",
+      "delta": "P - T",
+      "lead_rule": {
+        "pursuit": "delta >= 0.15",
+        "threat": "delta <= -0.15",
+        "balanced": "else"
+      },
+      "weights": { "wO": 0.40, "wE": 0.35, "wC": 0.25 }
+    },
+    "cutlines": {
+      "high": 0.67,
+      "medium_min": 0.33,
+      "medium_max": 0.66
+    },
+    "templates": {
+      "mirror": {
+        "pursuit": "You convert tension into motion through {facet}. Keep walking.",
+        "threat": "You secure the ground first; {facet} waits until risk clears. Keep walking.",
+        "balanced": "You weigh risk and pull, then move with {facet}. Keep walking."
+      }
+    },
+    "domains": {
+      "O": {
+        "name": "Openness",
+        "facets": ["Imagination","Intellect","Artistic interests","Adventurousness","Emotionality","Liberalism"],
+        "tags": {
+          "High": {
+            "Imagination": "You reach for new images fast; ideas come alive on contact. Keep walking.",
+            "Intellect": "You test concepts by playing with them until they yield shape. Keep walking.",
+            "Artistic interests": "You notice form patterns before most people see content. Keep walking.",
+            "Adventurousness": "You change lanes early to see more road. Keep walking.",
+            "Emotionality": "You register mood shifts as data, then use them. Keep walking.",
+            "Liberalism": "You question defaults by default. Keep walking."
+          },
+          "Medium": "{You open the window when needed; you don’t live with it wide. Keep walking.}",
+          "Low": "{You prefer known frames; novelty must prove utility. Keep walking.}"
+        }
+      },
+      "C": {
+        "name": "Conscientiousness",
+        "facets": ["Self-Efficacy","Orderliness","Dutifulness","Achievement-Striving","Self-Discipline","Cautiousness"],
+        "tags": {
+          "High": {
+            "Self-Efficacy": "You bet on your own execution and act accordingly. Keep walking.",
+            "Orderliness": "You stabilize the surface first so work can move. Keep walking.",
+            "Dutifulness": "You honor the contract you accept without drift. Keep walking.",
+            "Achievement-Striving": "You climb when the hill matters. Keep walking.",
+            "Self-Discipline": "You finish after the feeling is gone. Keep walking.",
+            "Cautiousness": "You check for traps, then proceed. Keep walking."
+          },
+          "Medium": "{You can lock in structure when the mission needs it. Keep walking.}",
+          "Low": "{You avoid rigid plans unless payoff is clear. Keep walking.}"
+        }
+      },
+      "E": {
+        "name": "Extraversion",
+        "facets": ["Friendliness","Gregariousness","Assertiveness","Activity level","Excitement-seeking","Cheerfulness"],
+        "tags": {
+          "High": {
+            "Friendliness": "You open channels fast. Keep walking.",
+            "Gregariousness": "You like thick signal density. Keep walking.",
+            "Assertiveness": "You take the mic to move things. Keep walking.",
+            "Activity level": "You prefer motion to waiting. Keep walking.",
+            "Excitement-seeking": "You upshift to test edges. Keep walking.",
+            "Cheerfulness": "You lift tone as a tool. Keep walking."
+          },
+          "Medium": "{You can light the room or keep it steady. Keep walking.}",
+          "Low": "{You keep your signal tight; noise costs. Keep walking.}"
+        }
+      },
+      "A": {
+        "name": "Agreeableness",
+        "facets": ["Trust","Morality","Altruism","Cooperation","Modesty","Sympathy"],
+        "tags": {
+          "High": {
+            "Trust": "You start with benefit of doubt. Keep walking.",
+            "Morality": "You speak straight and skip spin. Keep walking.",
+            "Altruism": "You add effort where it moves others. Keep walking.",
+            "Cooperation": "You trade some control for speed. Keep walking.",
+            "Modesty": "You deflect spotlight unless it serves work. Keep walking.",
+            "Sympathy": "You register others’ load and adjust. Keep walking."
+          },
+          "Medium": "{You balance candor and harmony by context. Keep walking.}",
+          "Low": "{You protect clarity over comfort. Keep walking.}"
+        }
+      },
+      "N": {
+        "name": "Neuroticism",
+        "facets": ["Anxiety","Anger","Depression","Self-Consciousness","Immoderation","Vulnerability"],
+        "tags": {
+          "High": {
+            "Anxiety": "You detect threat early and plan around it. Keep walking.",
+            "Anger": "You push back when bounds are crossed. Keep walking.",
+            "Depression": "You watch for energy dips and guard cadence. Keep walking.",
+            "Self-Consciousness": "You track eyes on you and adapt. Keep walking.",
+            "Immoderation": "You manage urges by rule. Keep walking.",
+            "Vulnerability": "You recruit help when the load spikes. Keep walking."
+          },
+          "Medium": "{You feel the spikes and keep course. Keep walking.}",
+          "Low": "{You stabilize fast after hits. Keep walking.}"
+        }
+      }
+    },
+    "handoff_payload": {
+      "type": "Handoff",
+      "fields": ["domain","line","tag","indices","hash"],
+      "indices_shape": ["T","P","S","delta","lead"]
+    },
+    "hashing": {
+      "algo": "sha256",
+      "input_keys": ["domain","domain_mean","topFacet","level","T","P","S","delta","lead"]
+    },
+    "life_signals": {
+      "note": "Use z(x)=clamp01((x-1)/4) for any raw 1–5 domain input unless otherwise specified.",
+      "signals": {
+        "T": {
+          "name": "Threat",
+          "definition": "pain/avoid drive",
+          "proxy": "Neuroticism",
+          "formula": "z(N)"
+        },
+        "P": {
+          "name": "Pursuit",
+          "definition": "approach/explore/build drive",
+          "proxy": "Openness + Extraversion + Conscientiousness",
+          "weights": { "wO": 0.40, "wE": 0.35, "wC": 0.25 },
+          "formula": "clamp01(( (wO*O + wE*E + wC*C)/5 - 0.2)/0.8)"
+        },
+        "S": {
+          "name": "Social Buffer",
+          "definition": "bonding/soothing capacity",
+          "proxy": "Agreeableness",
+          "formula": "z(A)"
+        },
+        "B": {
+          "name": "Bonding/Care",
+          "definition": "protect and nurture pull",
+          "proxy": "Agreeableness minus Anger",
+          "formula": "clamp01( 0.8*z(A) - 0.2*z(N) )"
+        },
+        "D": {
+          "name": "Dominance/Drive",
+          "definition": "take-charge push",
+          "proxy": "Assertiveness + Self-Efficacy",
+          "formula": "clamp01( 0.55*z(E) + 0.45*z(C) )"
+        },
+        "G": {
+          "name": "Boundary/Aggression",
+          "definition": "defend limits, confront",
+          "proxy": "Anger minus Agreeableness",
+          "formula": "clamp01( 0.7*z(N) - 0.3*z(A) )"
+        },
+        "R": {
+          "name": "Order/Regulation",
+          "definition": "structure and impulse control",
+          "proxy": "Conscientiousness",
+          "formula": "z(C)"
+        },
+        "V": {
+          "name": "Novelty/Curiosity",
+          "definition": "seek new patterns and info",
+          "proxy": "Openness",
+          "formula": "z(O)"
+        },
+        "Y": {
+          "name": "Play/Positive Affect",
+          "definition": "light exploration and fun",
+          "proxy": "Cheerfulness + Activity",
+          "formula": "clamp01( 0.6*z(E) + 0.1*z(O) )"
+        },
+        "L": {
+          "name": "Lust/Reproductive",
+          "definition": "mating approach energy",
+          "proxy": "Excitement-seeking + Adventurousness",
+          "formula": "clamp01( 0.7*z(E) + 0.3*z(O) )"
+        },
+        "F": {
+          "name": "Belonging/Affiliation",
+          "definition": "merge, join, keep peace",
+          "proxy": "Agreeableness + Gregariousness",
+          "formula": "clamp01( 0.7*z(A) + 0.3*z(E) )"
+        },
+        "U": {
+          "name": "Autonomy/Independence",
+          "definition": "act from self, resist pressure",
+          "proxy": "Low Agreeableness + High Conscientiousness",
+          "formula": "clamp01( 0.6*z(C) + 0.2*(1 - z(A)) )"
+        },
+        "M": {
+          "name": "Meaning/Coherence",
+          "definition": "pattern-making and sense-making",
+          "proxy": "Intellect + Orderliness",
+          "formula": "clamp01( 0.5*z(O) + 0.5*z(C) )"
+        },
+        "I": {
+          "name": "Integrity/Truth",
+          "definition": "candor; truth over comfort",
+          "proxy": "Morality with low acquiescence",
+          "formula": "clamp01( 0.6*z(A) + 0.2*z(C) - 0.2*z(N) )"
+        },
+        "K": {
+          "name": "Status/Esteem",
+          "definition": "rank seeking and prestige sensitivity",
+          "proxy": "Assertiveness minus Modesty",
+          "formula": "clamp01( 0.6*z(E) + 0.2*(1 - z(A)) + 0.2*z(C) )"
+        },
+        "Q": {
+          "name": "Security/Conservation",
+          "definition": "safety, sameness, conserve gains",
+          "proxy": "Low Openness + High Conscientiousness + Low Neuroticism",
+          "formula": "clamp01( 0.45*z(C) + 0.35*(1 - z(O)) + 0.20*(1 - z(N)) )"
+        }
+      },
+      "derived_axes": {
+        "motion_balance": {
+          "definition": "net direction of drive",
+          "formula": "delta = P - T",
+          "labels": { "pursuit": "delta >= 0.15", "threat": "delta <= -0.15", "balanced": "else" }
+        },
+        "social_stance": {
+          "definition": "affiliation vs independence",
+          "formula": "compare F vs U",
+          "labels": { "affiliation_led": "F - U >= 0.10", "autonomy_led": "U - F >= 0.10", "mixed": "else" }
+        },
+        "style_axis": {
+          "definition": "novelty vs security",
+          "formula": "compare V vs Q",
+          "labels": { "novelty_led": "V - Q >= 0.10", "security_led": "Q - V >= 0.10", "mixed": "else" }
+        }
+      }
+    }
+  }
+    

@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Assessment from "@/components/assessment/Assessment";
+import LifeSignalNudge from "@/components/assessment/LifeSignalNudge";
 import { useRouter } from "next/navigation";
 import { DOMAINS, VERSION, canonicalFacets, FACET_DESCRIPTIONS, FACET_INTERPRETATIONS, DOMAIN_DESCRIPTIONS } from "@/lib/bigfive/constants";
 import { stableStringify, getScoreLevel, getFacetScoreLevel } from "@/lib/bigfive/format";
@@ -16,6 +17,8 @@ export default function FullAssessment(){
   const [suiteHash, setSuiteHash] = useState<string | null>(null);
   const [verifyStatus, setVerifyStatus] = useState<'idle'|'ok'|'fail'>('idle');
   const router = useRouter();
+  const [nudge, setNudge] = useState<{domain:DomainKey; mean:number}|null>(null);
+  const [pending, setPending] = useState<any|null>(null);
 
   useEffect(()=>{
     // Save full answers server-side and redirect to ID-based result
@@ -49,10 +52,31 @@ export default function FullAssessment(){
   return (
     <div className="card">
       {!done ? (
-        <DomainRunner domain={domainOrder[idx]} onComplete={(payload)=>{
-          setResults(prev => prev.concat({domain: domainOrder[idx], payload}));
-          setIdx(idx+1);
-        }} />
+        <>
+          {nudge ? (
+            <LifeSignalNudge 
+              domain={nudge.domain}
+              domainMeanRaw={nudge.mean}
+              progressIndex={idx}
+              total={domainOrder.length}
+              onNext={()=>{
+                if (pending){
+                  setResults(prev => prev.concat({domain: domainOrder[idx], payload: pending}));
+                  setPending(null);
+                }
+                setNudge(null);
+                setIdx(prev=> prev+1);
+              }}
+            />
+          ) : null}
+          {!nudge ? (
+            <DomainRunner domain={domainOrder[idx]} onComplete={(payload)=>{
+              const mean = payload?.final?.domain_mean_raw as number | undefined;
+              if (typeof mean === 'number') setNudge({ domain: domainOrder[idx], mean });
+              setPending(payload);
+            }} />
+          ) : null}
+        </>
       ) : (
         <AllResults results={results} suiteHash={suiteHash} verifyStatus={verifyStatus} onVerify={async ()=>{
           const normalized = results.map(r=>({domain:r.domain, payload:r.payload}));

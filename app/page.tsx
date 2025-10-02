@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { sha256 } from "@/lib/crypto/sha256";
 import { stableStringify } from "@/lib/bigfive/format";
@@ -12,6 +12,7 @@ export default function HomePage() {
   const [domainVerifyStatus, setDomainVerifyStatus] = useState<'idle'|'ok'|'fail'>('idle');
   const fileRef = useRef<HTMLInputElement|null>(null);
   const router = useRouter();
+  useEffect(()=>{ router.replace('/who'); },[]);
 
   async function handleLoadByHash(){
     try{

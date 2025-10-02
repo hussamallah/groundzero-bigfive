@@ -1,0 +1,715 @@
+{
+  "suiteHash": "a749f713cebbd254f1a6b2d1dd4ccba735827f996e92bbbb785dc93281328bc0",
+  "results": [
+    {
+      "domain": "O",
+      "payload": {
+        "version": "gz-domainspec-1.3.0",
+        "domain": "O",
+        "phase1": {
+          "p": {
+            "Imagination": 0,
+            "Artistic Interests": 0,
+            "Emotionality": 1,
+            "Adventurousness": 0,
+            "Intellect": 1,
+            "Liberalism": 1
+          },
+          "m": {
+            "Imagination": 0,
+            "Artistic Interests": 0,
+            "Emotionality": 0,
+            "Adventurousness": 0,
+            "Intellect": 1,
+            "Liberalism": 1
+          },
+          "t": {
+            "Imagination": 1,
+            "Artistic Interests": 1,
+            "Emotionality": 0,
+            "Adventurousness": 0,
+            "Intellect": 0,
+            "Liberalism": 0
+          },
+          "P": {
+            "Imagination": 1,
+            "Artistic Interests": 1,
+            "Emotionality": 2,
+            "Adventurousness": 0,
+            "Intellect": 0,
+            "Liberalism": 0
+          }
+        },
+        "phase2": {
+          "answers": [
+            {
+              "facet": "Imagination",
+              "idx": 0,
+              "value": 5
+            },
+            {
+              "facet": "Imagination",
+              "idx": 1,
+              "value": 1
+            },
+            {
+              "facet": "Artistic Interests",
+              "idx": 0,
+              "value": 5
+            },
+            {
+              "facet": "Artistic Interests",
+              "idx": 1,
+              "value": 2
+            },
+            {
+              "facet": "Emotionality",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Adventurousness",
+              "idx": 0,
+              "value": 1
+            },
+            {
+              "facet": "Adventurousness",
+              "idx": 1,
+              "value": 5
+            },
+            {
+              "facet": "Intellect",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Intellect",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Liberalism",
+              "idx": 0,
+              "value": 3
+            },
+            {
+              "facet": "Liberalism",
+              "idx": 1,
+              "value": 4
+            }
+          ],
+          "A_raw": {
+            "Imagination": 3,
+            "Artistic Interests": 3.5,
+            "Emotionality": 4,
+            "Adventurousness": 3,
+            "Intellect": 3,
+            "Liberalism": 3.5
+          }
+        },
+        "phase3": {
+          "asked": []
+        },
+        "final": {
+          "A_pct": {
+            "Imagination": 50,
+            "Artistic Interests": 62.5,
+            "Emotionality": 75,
+            "Adventurousness": 50,
+            "Intellect": 50,
+            "Liberalism": 62.5
+          },
+          "bucket": {
+            "Imagination": "Medium",
+            "Artistic Interests": "Medium",
+            "Emotionality": "High",
+            "Adventurousness": "Medium",
+            "Intellect": "Medium",
+            "Liberalism": "Medium"
+          },
+          "order": [
+            "Artistic Interests",
+            "Liberalism",
+            "Imagination",
+            "Adventurousness",
+            "Intellect",
+            "Emotionality"
+          ],
+          "domain_mean_raw": 3.33,
+          "domain_mean_pct": 58.3
+        },
+        "audit": {
+          "nonce": "337ffbe81779b3cf6fb56ce1ce7272d1f19e0d6addf59efc5abb97118ab09e6f"
+        }
+      }
+    },
+    {
+      "domain": "C",
+      "payload": {
+        "version": "gz-domainspec-1.3.0",
+        "domain": "C",
+        "phase1": {
+          "p": {
+            "Self-Efficacy": 0,
+            "Orderliness": 0,
+            "Dutifulness": 1,
+            "Achievement-Striving": 0,
+            "Self-Discipline": 1,
+            "Cautiousness": 1
+          },
+          "m": {
+            "Self-Efficacy": 0,
+            "Orderliness": 0,
+            "Dutifulness": 1,
+            "Achievement-Striving": 0,
+            "Self-Discipline": 0,
+            "Cautiousness": 1
+          },
+          "t": {
+            "Self-Efficacy": 1,
+            "Orderliness": 0,
+            "Dutifulness": 0,
+            "Achievement-Striving": 0,
+            "Self-Discipline": 0,
+            "Cautiousness": 1
+          },
+          "P": {
+            "Self-Efficacy": 1,
+            "Orderliness": 0,
+            "Dutifulness": 0,
+            "Achievement-Striving": 0,
+            "Self-Discipline": 2,
+            "Cautiousness": 1
+          }
+        },
+        "phase2": {
+          "answers": [
+            {
+              "facet": "Self-Efficacy",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Self-Efficacy",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Orderliness",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Orderliness",
+              "idx": 1,
+              "value": 3
+            },
+            {
+              "facet": "Dutifulness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Dutifulness",
+              "idx": 1,
+              "value": 2
+            },
+            {
+              "facet": "Achievement-Striving",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Achievement-Striving",
+              "idx": 1,
+              "value": 3
+            },
+            {
+              "facet": "Self-Discipline",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Cautiousness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Cautiousness",
+              "idx": 1,
+              "value": 4
+            }
+          ],
+          "A_raw": {
+            "Self-Efficacy": 3,
+            "Orderliness": 2.5,
+            "Dutifulness": 3,
+            "Achievement-Striving": 3.5,
+            "Self-Discipline": 4,
+            "Cautiousness": 4
+          }
+        },
+        "phase3": {
+          "asked": []
+        },
+        "final": {
+          "A_pct": {
+            "Self-Efficacy": 50,
+            "Orderliness": 37.5,
+            "Dutifulness": 50,
+            "Achievement-Striving": 62.5,
+            "Self-Discipline": 75,
+            "Cautiousness": 75
+          },
+          "bucket": {
+            "Self-Efficacy": "Medium",
+            "Orderliness": "Medium",
+            "Dutifulness": "Medium",
+            "Achievement-Striving": "Medium",
+            "Self-Discipline": "High",
+            "Cautiousness": "High"
+          },
+          "order": [
+            "Achievement-Striving",
+            "Self-Efficacy",
+            "Dutifulness",
+            "Orderliness",
+            "Self-Discipline",
+            "Cautiousness"
+          ],
+          "domain_mean_raw": 3.33,
+          "domain_mean_pct": 58.3
+        },
+        "audit": {
+          "nonce": "2812a97d36f7ec8788255e68f9dcc841f1546bfe10981a684cc2a31a048ce25f"
+        }
+      }
+    },
+    {
+      "domain": "E",
+      "payload": {
+        "version": "gz-domainspec-1.3.0",
+        "domain": "E",
+        "phase1": {
+          "p": {
+            "Friendliness": 0,
+            "Gregariousness": 0,
+            "Assertiveness": 0,
+            "Activity Level": 1,
+            "Excitement-Seeking": 1,
+            "Cheerfulness": 1
+          },
+          "m": {
+            "Friendliness": 0,
+            "Gregariousness": 0,
+            "Assertiveness": 0,
+            "Activity Level": 1,
+            "Excitement-Seeking": 0,
+            "Cheerfulness": 1
+          },
+          "t": {
+            "Friendliness": 1,
+            "Gregariousness": 0,
+            "Assertiveness": 0,
+            "Activity Level": 0,
+            "Excitement-Seeking": 0,
+            "Cheerfulness": 1
+          },
+          "P": {
+            "Friendliness": 1,
+            "Gregariousness": 0,
+            "Assertiveness": 0,
+            "Activity Level": 0,
+            "Excitement-Seeking": 2,
+            "Cheerfulness": 1
+          }
+        },
+        "phase2": {
+          "answers": [
+            {
+              "facet": "Friendliness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Friendliness",
+              "idx": 1,
+              "value": 2
+            },
+            {
+              "facet": "Gregariousness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Gregariousness",
+              "idx": 1,
+              "value": 3
+            },
+            {
+              "facet": "Assertiveness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Assertiveness",
+              "idx": 1,
+              "value": 2
+            },
+            {
+              "facet": "Activity Level",
+              "idx": 0,
+              "value": 5
+            },
+            {
+              "facet": "Activity Level",
+              "idx": 1,
+              "value": 3
+            },
+            {
+              "facet": "Excitement-Seeking",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Cheerfulness",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Cheerfulness",
+              "idx": 1,
+              "value": 4
+            }
+          ],
+          "A_raw": {
+            "Friendliness": 3,
+            "Gregariousness": 3.5,
+            "Assertiveness": 3,
+            "Activity Level": 4,
+            "Excitement-Seeking": 4,
+            "Cheerfulness": 3
+          }
+        },
+        "phase3": {
+          "asked": []
+        },
+        "final": {
+          "A_pct": {
+            "Friendliness": 50,
+            "Gregariousness": 62.5,
+            "Assertiveness": 50,
+            "Activity Level": 75,
+            "Excitement-Seeking": 75,
+            "Cheerfulness": 50
+          },
+          "bucket": {
+            "Friendliness": "Medium",
+            "Gregariousness": "Medium",
+            "Assertiveness": "Medium",
+            "Activity Level": "High",
+            "Excitement-Seeking": "High",
+            "Cheerfulness": "Medium"
+          },
+          "order": [
+            "Gregariousness",
+            "Friendliness",
+            "Cheerfulness",
+            "Assertiveness",
+            "Excitement-Seeking",
+            "Activity Level"
+          ],
+          "domain_mean_raw": 3.42,
+          "domain_mean_pct": 60.5
+        },
+        "audit": {
+          "nonce": "7d3b1ce9ac8efd97c21128d449c2b8f9951da880304fcc0a387e21e98062c717"
+        }
+      }
+    },
+    {
+      "domain": "A",
+      "payload": {
+        "version": "gz-domainspec-1.3.0",
+        "domain": "A",
+        "phase1": {
+          "p": {
+            "Trust": 0,
+            "Morality": 0,
+            "Altruism": 1,
+            "Cooperation": 0,
+            "Modesty": 1,
+            "Sympathy": 1
+          },
+          "m": {
+            "Trust": 0,
+            "Morality": 0,
+            "Altruism": 0,
+            "Cooperation": 0,
+            "Modesty": 1,
+            "Sympathy": 1
+          },
+          "t": {
+            "Trust": 1,
+            "Morality": 0,
+            "Altruism": 0,
+            "Cooperation": 0,
+            "Modesty": 0,
+            "Sympathy": 1
+          },
+          "P": {
+            "Trust": 1,
+            "Morality": 0,
+            "Altruism": 2,
+            "Cooperation": 0,
+            "Modesty": 0,
+            "Sympathy": 1
+          }
+        },
+        "phase2": {
+          "answers": [
+            {
+              "facet": "Trust",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Trust",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Morality",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Morality",
+              "idx": 1,
+              "value": 3
+            },
+            {
+              "facet": "Altruism",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Cooperation",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Cooperation",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Modesty",
+              "idx": 0,
+              "value": 3
+            },
+            {
+              "facet": "Modesty",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Sympathy",
+              "idx": 0,
+              "value": 2
+            },
+            {
+              "facet": "Sympathy",
+              "idx": 1,
+              "value": 4
+            }
+          ],
+          "A_raw": {
+            "Trust": 3,
+            "Morality": 2.5,
+            "Altruism": 4,
+            "Cooperation": 3,
+            "Modesty": 3.5,
+            "Sympathy": 3
+          }
+        },
+        "phase3": {
+          "asked": []
+        },
+        "final": {
+          "A_pct": {
+            "Trust": 50,
+            "Morality": 37.5,
+            "Altruism": 75,
+            "Cooperation": 50,
+            "Modesty": 62.5,
+            "Sympathy": 50
+          },
+          "bucket": {
+            "Trust": "Medium",
+            "Morality": "Medium",
+            "Altruism": "High",
+            "Cooperation": "Medium",
+            "Modesty": "Medium",
+            "Sympathy": "Medium"
+          },
+          "order": [
+            "Modesty",
+            "Trust",
+            "Sympathy",
+            "Cooperation",
+            "Morality",
+            "Altruism"
+          ],
+          "domain_mean_raw": 3.17,
+          "domain_mean_pct": 54.3
+        },
+        "audit": {
+          "nonce": "0c24d43fbe188b7a5839fbd07a380db23319d723fd77ec0f3625001ba102ddb9"
+        }
+      }
+    },
+    {
+      "domain": "N",
+      "payload": {
+        "version": "gz-domainspec-1.3.0",
+        "domain": "N",
+        "phase1": {
+          "p": {
+            "Anxiety": 0,
+            "Anger": 0,
+            "Depression": 1,
+            "Self-Consciousness": 0,
+            "Immoderation": 1,
+            "Vulnerability": 1
+          },
+          "m": {
+            "Anxiety": 0,
+            "Anger": 0,
+            "Depression": 0,
+            "Self-Consciousness": 0,
+            "Immoderation": 1,
+            "Vulnerability": 1
+          },
+          "t": {
+            "Anxiety": 1,
+            "Anger": 0,
+            "Depression": 0,
+            "Self-Consciousness": 0,
+            "Immoderation": 0,
+            "Vulnerability": 1
+          },
+          "P": {
+            "Anxiety": 1,
+            "Anger": 0,
+            "Depression": 2,
+            "Self-Consciousness": 0,
+            "Immoderation": 0,
+            "Vulnerability": 1
+          }
+        },
+        "phase2": {
+          "answers": [
+            {
+              "facet": "Anxiety",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Anxiety",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Anger",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Anger",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Depression",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Self-Consciousness",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Self-Consciousness",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Immoderation",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Immoderation",
+              "idx": 1,
+              "value": 4
+            },
+            {
+              "facet": "Vulnerability",
+              "idx": 0,
+              "value": 4
+            },
+            {
+              "facet": "Vulnerability",
+              "idx": 1,
+              "value": 4
+            }
+          ],
+          "A_raw": {
+            "Anxiety": 4,
+            "Anger": 4,
+            "Depression": 4,
+            "Self-Consciousness": 4,
+            "Immoderation": 4,
+            "Vulnerability": 4
+          }
+        },
+        "phase3": {
+          "asked": []
+        },
+        "final": {
+          "A_pct": {
+            "Anxiety": 75,
+            "Anger": 75,
+            "Depression": 75,
+            "Self-Consciousness": 75,
+            "Immoderation": 75,
+            "Vulnerability": 75
+          },
+          "bucket": {
+            "Anxiety": "High",
+            "Anger": "High",
+            "Depression": "High",
+            "Self-Consciousness": "High",
+            "Immoderation": "High",
+            "Vulnerability": "High"
+          },
+          "order": [
+            "Depression",
+            "Anxiety",
+            "Vulnerability",
+            "Anger",
+            "Self-Consciousness",
+            "Immoderation"
+          ],
+          "domain_mean_raw": 4,
+          "domain_mean_pct": 75
+        },
+        "audit": {
+          "nonce": "6425750968219bdaba80df89ffe04378a84348175edf41693b296cc72b0915da"
+        }
+      }
+    }
+  ]
+}
